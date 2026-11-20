@@ -1,5 +1,5 @@
 {
-  "id": "STK-003",
+  "id": "HS-HSS-STK-0003",
   "object": "requirement",
   "type": "constraint",
   "title": "Low operating burden",
@@ -8,6 +8,5 @@
   "source": "Operations team",
   "stability": "stable",
   "status": "approved",
-  "priority": "should",
-  "compliance": "not assessed"
+  "priority": "should"
 }

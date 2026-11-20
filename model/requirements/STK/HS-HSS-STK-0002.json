@@ -1,5 +1,5 @@
 {
-  "id": "STK-002",
+  "id": "HS-HSS-STK-0002",
   "object": "requirement",
   "type": "functional",
   "title": "Early pollution warning",
@@ -8,6 +8,5 @@
   "source": "Environmental regulator",
   "stability": "stable",
   "status": "approved",
-  "priority": "must",
-  "compliance": "not assessed"
+  "priority": "must"
 }

@@ -1,5 +1,5 @@
 {
-  "id": "STK-001",
+  "id": "HS-HSS-STK-0001",
   "object": "requirement",
   "type": "functional",
   "title": "Continuous water-quality awareness",
@@ -8,6 +8,5 @@
   "source": "Harbour Authority",
   "stability": "stable",
   "status": "approved",
-  "priority": "must",
-  "compliance": "not assessed"
+  "priority": "must"
 }

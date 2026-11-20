@@ -1,5 +1,5 @@
 {
-  "id": "SYS-007",
+  "id": "HS-CTRL-REQ-0007",
   "object": "requirement",
   "type": "functional",
   "title": "Health telemetry",
@@ -8,9 +8,8 @@
   "stability": "stable",
   "status": "review",
   "priority": "should",
-  "compliance": "not assessed",
   "verification": "test",
   "traces": [
-    "USER-006"
+    "HS-HSS-USR-0006"
   ]
 }

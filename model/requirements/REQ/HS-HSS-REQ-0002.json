@@ -1,5 +1,5 @@
 {
-  "id": "SYS-002",
+  "id": "HS-HSS-REQ-0002",
   "object": "requirement",
   "type": "performance",
   "title": "Reading latency",
@@ -9,9 +9,9 @@
   "status": "approved",
   "priority": "must",
   "compliance": "compliant",
-  "complianceEvidence": "VER-002: 95th percentile latency 41 s.",
+  "complianceEvidence": "HS-HSS-VER-0002: 95th percentile latency 41 s.",
   "verification": "test",
   "traces": [
-    "USER-001"
+    "HS-HSS-USR-0001"
   ]
 }

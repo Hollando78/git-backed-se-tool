@@ -1,0 +1,11 @@
+{
+  "id": "HS-HSS-ASS-0003",
+  "object": "assumption",
+  "title": "Fleet size",
+  "text": "The fleet will not exceed 40 buoys during the life of the system.",
+  "rationale": "Sets the load case for ingest and alerting.",
+  "source": "Harbour Authority planning brief",
+  "stability": "developing",
+  "status": "review",
+  "priority": "must"
+}

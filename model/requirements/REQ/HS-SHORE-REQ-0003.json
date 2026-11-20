@@ -1,18 +1,17 @@
 {
-  "id": "SYS-003",
+  "id": "HS-SHORE-REQ-0003",
   "object": "requirement",
   "type": "functional",
   "title": "Data retention",
   "text": "The system shall retain all readings for at least 24 months.",
   "rationale": "Two full seasonal cycles for baseline comparison.",
   "source": "System requirements review",
-  "stability": "likely to change",
+  "stability": "developing",
   "stabilityRationale": "Retention period is under legal review.",
   "status": "approved",
   "priority": "should",
-  "compliance": "not assessed",
   "verification": "inspection",
   "traces": [
-    "USER-002"
+    "HS-HSS-USR-0002"
   ]
 }

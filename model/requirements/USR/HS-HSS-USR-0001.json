@@ -1,5 +1,5 @@
 {
-  "id": "USER-001",
+  "id": "HS-HSS-USR-0001",
   "object": "requirement",
   "type": "functional",
   "title": "View live readings",
@@ -8,8 +8,7 @@
   "stability": "stable",
   "status": "approved",
   "priority": "must",
-  "compliance": "not assessed",
   "traces": [
-    "STK-001"
+    "HS-HSS-STK-0001"
   ]
 }

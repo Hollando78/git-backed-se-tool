@@ -1,5 +1,5 @@
 {
-  "id": "USER-004",
+  "id": "HS-HSS-USR-0004",
   "object": "requirement",
   "type": "functional",
   "title": "Configure alert thresholds",
@@ -9,8 +9,7 @@
   "stability": "stable",
   "status": "approved",
   "priority": "should",
-  "compliance": "not assessed",
   "traces": [
-    "STK-002"
+    "HS-HSS-STK-0002"
   ]
 }

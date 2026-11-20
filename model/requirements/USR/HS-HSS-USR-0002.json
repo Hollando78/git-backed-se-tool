@@ -1,5 +1,5 @@
 {
-  "id": "USER-002",
+  "id": "HS-HSS-USR-0002",
   "object": "requirement",
   "type": "functional",
   "title": "Review historical trends",
@@ -9,8 +9,7 @@
   "stability": "stable",
   "status": "approved",
   "priority": "should",
-  "compliance": "not assessed",
   "traces": [
-    "STK-001"
+    "HS-HSS-STK-0001"
   ]
 }

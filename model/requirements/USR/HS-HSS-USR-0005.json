@@ -1,5 +1,5 @@
 {
-  "id": "USER-005",
+  "id": "HS-HSS-USR-0005",
   "object": "requirement",
   "type": "performance",
   "title": "Unattended operation",
@@ -8,8 +8,7 @@
   "stability": "stable",
   "status": "approved",
   "priority": "must",
-  "compliance": "not assessed",
   "traces": [
-    "STK-003"
+    "HS-HSS-STK-0003"
   ]
 }

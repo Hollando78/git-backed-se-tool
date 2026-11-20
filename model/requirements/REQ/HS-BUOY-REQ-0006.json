@@ -1,5 +1,5 @@
 {
-  "id": "SYS-006",
+  "id": "HS-BUOY-REQ-0006",
   "object": "requirement",
   "type": "performance",
   "title": "Energy autonomy",
@@ -10,9 +10,9 @@
   "status": "approved",
   "priority": "must",
   "compliance": "compliant",
-  "complianceEvidence": "VER-006: minimum state of charge 31% over 90 days.",
+  "complianceEvidence": "HS-BUOY-VER-0006: minimum state of charge 31% over 90 days.",
   "verification": "analysis",
   "traces": [
-    "USER-005"
+    "HS-HSS-USR-0005"
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "id": "STK-004",
+  "id": "HS-HSS-STK-0004",
   "object": "requirement",
   "type": "safety",
   "title": "Safe coexistence with vessel traffic",
@@ -7,6 +7,5 @@
   "source": "Harbour master",
   "stability": "stable",
   "status": "approved",
-  "priority": "must",
-  "compliance": "not assessed"
+  "priority": "must"
 }

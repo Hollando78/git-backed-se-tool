@@ -1,5 +1,5 @@
 {
-  "id": "SYS-009",
+  "id": "HS-CTRL-REQ-0009",
   "object": "requirement",
   "type": "functional",
   "title": "Outage buffering",
@@ -8,10 +8,9 @@
   "stability": "stable",
   "status": "review",
   "priority": "should",
-  "compliance": "not assessed",
   "verification": "test",
   "traces": [
-    "USER-001",
-    "USER-005"
+    "HS-HSS-USR-0001",
+    "HS-HSS-USR-0005"
   ]
 }

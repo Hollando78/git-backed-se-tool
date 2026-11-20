@@ -1,5 +1,5 @@
 {
-  "id": "SYS-004",
+  "id": "HS-HSS-REQ-0004",
   "object": "requirement",
   "type": "performance",
   "title": "Alert latency",
@@ -9,10 +9,10 @@
   "status": "approved",
   "priority": "must",
   "compliance": "non-compliant",
-  "complianceRationale": "Worst case 3 min 10 s with 40 buoys reporting. Tracked as RSK-005.",
-  "complianceEvidence": "VER-004 test report.",
+  "complianceRationale": "Worst case 3 min 10 s with 40 buoys reporting. Tracked as HS-ALRT-RSK-0005.",
+  "complianceEvidence": "HS-HSS-VER-0004 test report.",
   "verification": "test",
   "traces": [
-    "USER-003"
+    "HS-HSS-USR-0003"
   ]
 }

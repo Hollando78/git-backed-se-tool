@@ -1,5 +1,5 @@
 {
-  "id": "SYS-001",
+  "id": "HS-BUOY-REQ-0001",
   "object": "requirement",
   "type": "performance",
   "title": "Sampling rate",
@@ -10,10 +10,10 @@
   "status": "approved",
   "priority": "must",
   "compliance": "compliant",
-  "complianceEvidence": "VER-001: longest observed interval 9 min 58 s.",
+  "complianceEvidence": "HS-BUOY-VER-0001: longest observed interval 9 min 58 s.",
   "verification": "test",
   "traces": [
-    "USER-001",
-    "USER-002"
+    "HS-HSS-USR-0001",
+    "HS-HSS-USR-0002"
   ]
 }

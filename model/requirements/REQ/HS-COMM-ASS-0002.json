@@ -1,0 +1,12 @@
+{
+  "id": "HS-COMM-ASS-0002",
+  "object": "assumption",
+  "title": "LTE-M coverage",
+  "text": "LTE-M coverage is available at every planned mooring for at least 95% of the time.",
+  "rationale": "Basis for choosing a cellular link over satellite.",
+  "source": "HS-COMM-DEC-0001",
+  "stability": "developing",
+  "stabilityRationale": "Site survey of the outer moorings is still to be done.",
+  "status": "review",
+  "priority": "must"
+}

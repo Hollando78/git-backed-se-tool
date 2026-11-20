@@ -1,17 +1,16 @@
 {
-  "id": "USER-006",
+  "id": "HS-HSS-USR-0006",
   "object": "requirement",
   "type": "functional",
   "title": "Remote health check",
   "text": "A technician shall be able to check the health of any buoy from shore.",
   "rationale": "Avoids boat trips to diagnose faults that turn out to be minor.",
   "source": "Duty officer workshop, session 2",
-  "stability": "likely to change",
+  "stability": "developing",
   "stabilityRationale": "Technician role is being redefined by the operations team.",
   "status": "review",
   "priority": "should",
-  "compliance": "not assessed",
   "traces": [
-    "STK-003"
+    "HS-HSS-STK-0003"
   ]
 }

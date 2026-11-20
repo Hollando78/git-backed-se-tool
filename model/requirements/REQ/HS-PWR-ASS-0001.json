@@ -1,0 +1,12 @@
+{
+  "id": "HS-PWR-ASS-0001",
+  "object": "assumption",
+  "title": "Winter irradiance",
+  "text": "Average winter solar irradiance at the moorings is at least 1.0 kWh/m2/day.",
+  "rationale": "Sizing basis for the energy autonomy requirement.",
+  "source": "Power budget analysis",
+  "stability": "unstable",
+  "stabilityRationale": "Only one winter of site measurements exists.",
+  "status": "review",
+  "priority": "must"
+}

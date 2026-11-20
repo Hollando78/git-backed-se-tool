@@ -1,0 +1,11 @@
+{
+  "id": "DEC-005",
+  "title": "Managed time-series database",
+  "context": "Readings must be kept for 24 months and queried by date range.",
+  "options": "Managed cloud time-series service; self-hosted database on a virtual machine.",
+  "status": "proposed",
+  "affects": [
+    "CMP-009",
+    "SYS-003"
+  ]
+}

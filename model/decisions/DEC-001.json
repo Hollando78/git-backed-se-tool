@@ -1,0 +1,13 @@
+{
+  "id": "DEC-001",
+  "title": "LTE-M as the primary data link",
+  "context": "Buoys need a low-power link that delivers readings within a minute.",
+  "options": "LTE-M; satellite short-burst data; private LoRaWAN gateway on the harbour wall.",
+  "decision": "LTE-M. Coverage is adequate in the inner harbour and running cost is a tenth of satellite.",
+  "status": "accepted",
+  "affects": [
+    "CMP-006",
+    "IF-004",
+    "SYS-002"
+  ]
+}

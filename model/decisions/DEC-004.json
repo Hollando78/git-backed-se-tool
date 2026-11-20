@@ -1,0 +1,11 @@
+{
+  "id": "DEC-004",
+  "title": "Add an AIS aid-to-navigation transponder",
+  "context": "The harbour master asked for buoys to appear on vessel chart plotters.",
+  "options": "Light only; light plus AIS AtoN; virtual AtoN broadcast from shore.",
+  "status": "proposed",
+  "affects": [
+    "CMP-007",
+    "SYS-010"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "DEC-003",
+  "title": "Optical dissolved-oxygen probe",
+  "context": "Membrane probes need recalibration more often than a seasonal visit allows.",
+  "options": "Galvanic membrane probe; optical luminescence probe.",
+  "decision": "Optical probe. Higher unit cost, but stable for 12 months.",
+  "status": "accepted",
+  "affects": [
+    "CMP-003",
+    "SYS-001"
+  ]
+}

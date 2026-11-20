@@ -1,12 +1,12 @@
 {
-  "id": "IF-005",
+  "id": "HS-LVL1-INT-0005",
   "title": "Network to ingest",
   "description": "MQTT broker endpoint; one topic per buoy.",
   "kind": "data",
-  "from": "CMP-012",
-  "to": "CMP-009",
+  "from": "HS-NET-PBS-0012",
+  "to": "HS-ING-PBS-0009",
   "status": "agreed",
   "requirements": [
-    "SYS-002"
+    "HS-HSS-REQ-0002"
   ]
 }

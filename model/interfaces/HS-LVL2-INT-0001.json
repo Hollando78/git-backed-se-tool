@@ -1,12 +1,12 @@
 {
-  "id": "IF-001",
+  "id": "HS-LVL2-INT-0001",
   "title": "Sensor bus",
   "description": "RS-485 Modbus; controller polls each probe.",
   "kind": "data",
-  "from": "CMP-003",
-  "to": "CMP-004",
+  "from": "HS-SENS-PBS-0003",
+  "to": "HS-CTRL-PBS-0004",
   "status": "baselined",
   "requirements": [
-    "SYS-001"
+    "HS-BUOY-REQ-0001"
   ]
 }

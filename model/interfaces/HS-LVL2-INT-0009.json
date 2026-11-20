@@ -1,12 +1,12 @@
 {
-  "id": "IF-009",
+  "id": "HS-LVL2-INT-0009",
   "title": "Operator alerts",
   "description": "On-screen and SMS notification to the duty officer.",
   "kind": "human",
-  "from": "CMP-010",
-  "to": "CMP-011",
+  "from": "HS-ALRT-PBS-0010",
+  "to": "HS-DASH-PBS-0011",
   "status": "agreed",
   "requirements": [
-    "SYS-004"
+    "HS-HSS-REQ-0004"
   ]
 }

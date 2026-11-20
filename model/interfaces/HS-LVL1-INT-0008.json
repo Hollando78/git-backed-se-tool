@@ -1,12 +1,12 @@
 {
-  "id": "IF-008",
+  "id": "HS-LVL1-INT-0008",
   "title": "Threshold downlink",
   "description": "Per-buoy threshold configuration pushed to the controller.",
   "kind": "data",
-  "from": "CMP-010",
-  "to": "CMP-004",
+  "from": "HS-ALRT-PBS-0010",
+  "to": "HS-CTRL-PBS-0004",
   "status": "draft",
   "requirements": [
-    "SYS-005"
+    "HS-ALRT-REQ-0005"
   ]
 }

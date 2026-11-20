@@ -1,12 +1,12 @@
 {
-  "id": "IF-006",
+  "id": "HS-LVL2-INT-0006",
   "title": "Reading stream",
   "description": "Validated readings published to the alerting service.",
   "kind": "data",
-  "from": "CMP-009",
-  "to": "CMP-010",
+  "from": "HS-ING-PBS-0009",
+  "to": "HS-ALRT-PBS-0010",
   "status": "draft",
   "requirements": [
-    "SYS-004"
+    "HS-HSS-REQ-0004"
   ]
 }

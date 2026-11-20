@@ -1,10 +1,10 @@
 {
-  "id": "VER-005",
+  "id": "HS-ALRT-VER-0005",
   "title": "Remote threshold change demonstration",
   "method": "demonstration",
   "procedure": "Change the pH range for one buoy from the dashboard and confirm it takes effect without a visit.",
   "result": "planned",
   "verifies": [
-    "SYS-005"
+    "HS-ALRT-REQ-0005"
   ]
 }

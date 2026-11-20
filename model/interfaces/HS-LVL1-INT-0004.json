@@ -1,12 +1,12 @@
 {
-  "id": "IF-004",
+  "id": "HS-LVL1-INT-0004",
   "title": "Buoy uplink",
   "description": "LTE-M band 20; MQTT over TLS.",
   "kind": "rf",
-  "from": "CMP-006",
-  "to": "CMP-012",
+  "from": "HS-COMM-PBS-0006",
+  "to": "HS-NET-PBS-0012",
   "status": "agreed",
   "requirements": [
-    "SYS-002"
+    "HS-HSS-REQ-0002"
   ]
 }

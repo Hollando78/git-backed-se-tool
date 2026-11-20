@@ -1,12 +1,12 @@
 {
-  "id": "IF-007",
+  "id": "HS-LVL2-INT-0007",
   "title": "Dashboard query API",
   "description": "Read-only HTTP API for live values and date-range queries.",
   "kind": "data",
-  "from": "CMP-009",
-  "to": "CMP-011",
+  "from": "HS-ING-PBS-0009",
+  "to": "HS-DASH-PBS-0011",
   "status": "draft",
   "requirements": [
-    "SYS-003"
+    "HS-SHORE-REQ-0003"
   ]
 }

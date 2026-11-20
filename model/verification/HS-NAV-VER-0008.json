@@ -1,11 +1,11 @@
 {
-  "id": "VER-008",
+  "id": "HS-NAV-VER-0008",
   "title": "Light range inspection",
   "method": "inspection",
   "procedure": "Photometric measurement of luminous intensity; computed nominal range at least 2 NM.",
   "result": "blocked",
   "notes": "Waiting for a photometric lab slot.",
   "verifies": [
-    "SYS-008"
+    "HS-NAV-REQ-0008"
   ]
 }

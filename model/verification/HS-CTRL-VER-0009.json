@@ -1,10 +1,10 @@
 {
-  "id": "VER-009",
+  "id": "HS-CTRL-VER-0009",
   "title": "Outage replay test",
   "method": "test",
   "procedure": "Disable the modem for 7 days, restore it and confirm no reading is missing on shore.",
   "result": "planned",
   "verifies": [
-    "SYS-009"
+    "HS-CTRL-REQ-0009"
   ]
 }

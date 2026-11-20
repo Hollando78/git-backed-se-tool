@@ -1,12 +1,12 @@
 {
-  "id": "IF-003",
+  "id": "HS-LVL2-INT-0003",
   "title": "Power distribution",
   "description": "12 V regulated rail with battery state telemetry.",
   "kind": "power",
-  "from": "CMP-005",
-  "to": "CMP-004",
+  "from": "HS-PWR-PBS-0005",
+  "to": "HS-CTRL-PBS-0004",
   "status": "baselined",
   "requirements": [
-    "SYS-006"
+    "HS-BUOY-REQ-0006"
   ]
 }

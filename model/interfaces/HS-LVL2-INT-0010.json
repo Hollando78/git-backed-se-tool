@@ -1,12 +1,12 @@
 {
-  "id": "IF-010",
+  "id": "HS-LVL2-INT-0010",
   "title": "Light power and control",
   "description": "Switched 12 V feed with dusk sensor override.",
   "kind": "power",
-  "from": "CMP-004",
-  "to": "CMP-007",
+  "from": "HS-CTRL-PBS-0004",
+  "to": "HS-NAV-PBS-0007",
   "status": "draft",
   "requirements": [
-    "SYS-008"
+    "HS-NAV-REQ-0008"
   ]
 }

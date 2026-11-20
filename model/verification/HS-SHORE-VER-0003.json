@@ -1,10 +1,10 @@
 {
-  "id": "VER-003",
+  "id": "HS-SHORE-VER-0003",
   "title": "Retention configuration inspection",
   "method": "inspection",
   "procedure": "Inspect storage lifecycle policy; no rule deletes readings younger than 24 months.",
   "result": "planned",
   "verifies": [
-    "SYS-003"
+    "HS-SHORE-REQ-0003"
   ]
 }

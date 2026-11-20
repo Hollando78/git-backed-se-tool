@@ -15,106 +15,211 @@
     verification: ['test', 'analysis', 'inspection', 'demonstration']
   };
 
-  var KEY_ORDER = ['id', 'title', 'text', 'rationale', 'source', 'status', 'priority', 'verification', 'traces'];
-  var OPTIONAL = ['rationale', 'source', 'verification'];
+  /* Item types other than requirements. `to` lists the ID prefixes a link may point at;
+     LEAF / REQS are placeholders resolved against the project's requirement levels. */
+  var TYPES = {
+    CMP: { name: 'Component', plural: 'Components', dir: 'components', fields: [
+      { k: 'title', label: 'Name', type: 'text', req: true },
+      { k: 'description', label: 'Description', type: 'area' },
+      { k: 'kind', label: 'Kind', type: 'select', req: true, opts: ['system', 'subsystem', 'hardware', 'software', 'external'] },
+      { k: 'parent', label: 'Part of', type: 'link', to: ['CMP'] },
+      { k: 'allocated', label: 'Allocated requirements', type: 'links', to: ['LEAF'] }
+    ] },
+    IF: { name: 'Interface', plural: 'Interfaces', dir: 'interfaces', fields: [
+      { k: 'title', label: 'Title', type: 'text', req: true },
+      { k: 'description', label: 'Description', type: 'area' },
+      { k: 'kind', label: 'Kind', type: 'select', req: true, opts: ['data', 'power', 'mechanical', 'rf', 'human'] },
+      { k: 'from', label: 'From', type: 'link', req: true, to: ['CMP'] },
+      { k: 'to', label: 'To', type: 'link', req: true, to: ['CMP'] },
+      { k: 'status', label: 'Status', type: 'select', req: true, opts: ['draft', 'agreed', 'baselined'] },
+      { k: 'requirements', label: 'Driving requirements', type: 'links', to: ['LEAF'] }
+    ] },
+    VER: { name: 'Verification case', plural: 'Verification cases', dir: 'verification', fields: [
+      { k: 'title', label: 'Title', type: 'text', req: true },
+      { k: 'method', label: 'Method', type: 'select', req: true, opts: 'verification' },
+      { k: 'procedure', label: 'Procedure and pass criteria', type: 'area' },
+      { k: 'result', label: 'Result', type: 'select', req: true, opts: ['planned', 'passed', 'failed', 'blocked'] },
+      { k: 'notes', label: 'Result notes', type: 'area' },
+      { k: 'verifies', label: 'Verifies', type: 'links', to: ['LEAF'] }
+    ] },
+    RSK: { name: 'Risk', plural: 'Risks', dir: 'risks', fields: [
+      { k: 'title', label: 'Title', type: 'text', req: true },
+      { k: 'description', label: 'Risk statement', type: 'area', req: true },
+      { k: 'likelihood', label: 'Likelihood (1-5)', type: 'num', req: true },
+      { k: 'impact', label: 'Impact (1-5)', type: 'num', req: true },
+      { k: 'status', label: 'Status', type: 'select', req: true, opts: ['open', 'mitigating', 'accepted', 'closed'] },
+      { k: 'mitigation', label: 'Mitigation', type: 'area' },
+      { k: 'owner', label: 'Owner', type: 'text' },
+      { k: 'affects', label: 'Affects', type: 'links', to: ['LEAF', 'CMP'] }
+    ] },
+    DEC: { name: 'Decision', plural: 'Decisions', dir: 'decisions', fields: [
+      { k: 'title', label: 'Title', type: 'text', req: true },
+      { k: 'context', label: 'Context', type: 'area', req: true },
+      { k: 'options', label: 'Options considered', type: 'area' },
+      { k: 'decision', label: 'Decision', type: 'area' },
+      { k: 'status', label: 'Status', type: 'select', req: true, opts: ['proposed', 'accepted', 'superseded'] },
+      { k: 'affects', label: 'Affects', type: 'links', to: ['REQS', 'CMP', 'IF'] }
+    ] }
+  };
 
   function project(p) {
     var out = {};
     for (var k in DEFAULT_PROJECT) out[k] = (p && p[k] != null) ? p[k] : DEFAULT_PROJECT[k];
+    if (p) for (var j in p) if (!(j in out)) out[j] = p[j];
     return out;
   }
 
-  function levelOf(id) { return String(id).split('-')[0]; }
-
-  function reqPath(modelRoot, id) {
-    return modelRoot + '/requirements/' + levelOf(id) + '/' + id + '.json';
+  function prefixOf(id) { return String(id).split('-')[0]; }
+  function levelDef(proj, key) { for (var i = 0; i < proj.levels.length; i++) if (proj.levels[i].key === key) return proj.levels[i]; return null; }
+  function leafKey(proj) {
+    var parents = {};
+    proj.levels.forEach(function (l) { if (l.parent) parents[l.parent] = true; });
+    var leaf = proj.levels.filter(function (l) { return !parents[l.key]; })[0];
+    return leaf ? leaf.key : null;
+  }
+  function typeOf(id, proj) {
+    var p = prefixOf(id);
+    if (levelDef(proj, p)) return 'REQ';
+    return TYPES[p] ? p : null;
+  }
+  /* The access-control unit: a folder under the model root. */
+  function areaOf(id, proj) {
+    var p = prefixOf(id);
+    return levelDef(proj, p) ? 'requirements/' + p : (TYPES[p] ? TYPES[p].dir : null);
+  }
+  function relPath(id, proj) { return areaOf(id, proj) + '/' + id + '.json'; }
+  function isItemPath(rel, proj) {
+    var m = rel.match(/^(.+)\/([^/]+)\.json$/);
+    return !!m && areaOf(m[2], proj) === m[1];
   }
 
-  /* Canonical file text: fixed key order, 2-space indent, trailing newline.
+  function fields(id, proj) {
+    var p = prefixOf(id), lvl = levelDef(proj, p), leaf = leafKey(proj);
+    var defs;
+    if (lvl) {
+      defs = [
+        { k: 'title', label: 'Title', type: 'text', req: true },
+        { k: 'text', label: 'Statement', type: 'area', req: true },
+        { k: 'rationale', label: 'Rationale', type: 'area' }
+      ];
+      if (!lvl.parent) defs.push({ k: 'source', label: 'Source (stakeholder)', type: 'text' });
+      defs.push({ k: 'status', label: 'Status', type: 'select', req: true, opts: 'statuses' },
+                { k: 'priority', label: 'Priority', type: 'select', req: true, opts: 'priorities' },
+                { k: 'verification', label: 'Verification', type: 'select', opts: 'verification' });
+      if (lvl.parent) defs.push({ k: 'traces', label: 'Traces to (' + lvl.parent + ')', type: 'links', to: [lvl.parent] });
+    } else defs = TYPES[p] ? TYPES[p].fields : [];
+    return defs.map(function (f) {
+      var o = {}; for (var k in f) o[k] = f[k];
+      if (typeof o.opts === 'string') o.opts = proj[o.opts];
+      if (o.to) {
+        var to = [];
+        o.to.forEach(function (t) {
+          if (t === 'LEAF') to.push(leaf);
+          else if (t === 'REQS') proj.levels.forEach(function (l) { to.push(l.key); });
+          else to.push(t);
+        });
+        o.to = to;
+      }
+      return o;
+    });
+  }
+
+  function isEmpty(v) { return v == null || v === '' || (Array.isArray(v) && !v.length); }
+
+  /* Canonical file text: id first, then fields in schema order, 2-space indent, trailing newline.
      Stable output keeps git diffs to the fields that actually changed. */
-  function serialize(data) {
-    var out = {};
-    KEY_ORDER.forEach(function (k) {
-      var v = data[k];
-      if (v == null) return;
-      if (OPTIONAL.indexOf(k) >= 0 && v === '') return;
-      if (k === 'traces') { if (!v.length) return; v = v.slice().sort(); }
-      out[k] = v;
+  function serialize(data, proj) {
+    proj = project(proj);
+    var out = { id: data.id };
+    fields(data.id, proj).forEach(function (f) {
+      var v = data[f.k];
+      if (isEmpty(v)) return;
+      out[f.k] = f.type === 'links' ? v.slice().sort() : v;
     });
     Object.keys(data).sort().forEach(function (k) {
-      if (!(k in out) && KEY_ORDER.indexOf(k) < 0) out[k] = data[k];
+      if (!(k in out) && !isEmpty(data[k])) out[k] = data[k];
     });
     return JSON.stringify(out, null, 2) + '\n';
   }
 
-  /* entries: [{ file: 'STK-001.json', dir: 'STK', data: {...} | null, parseError: string? }]
+  /* entries: [{ path: 'requirements/STK/STK-001.json', data: {...} | null, parseError: string? }]
      returns:  [{ severity: 'error' | 'warn', id, code, message }] */
   function validate(proj, entries) {
     proj = project(proj);
-    var issues = [];
-    var levels = {};
-    proj.levels.forEach(function (l) { levels[l.key] = l; });
-    var hasChild = {};
-    proj.levels.forEach(function (l) { if (l.parent) hasChild[l.parent] = true; });
+    var issues = [], byId = {}, leaf = leafKey(proj);
+    var hasChildLevel = {};
+    proj.levels.forEach(function (l) { if (l.parent) hasChildLevel[l.parent] = true; });
+    function add(severity, id, code, message) { issues.push({ severity: severity, id: id, code: code, message: message }); }
 
-    function add(severity, id, code, message) {
-      issues.push({ severity: severity, id: id, code: code, message: message });
-    }
-
-    var byId = {};
     entries.forEach(function (e) {
-      e._id = e.file.replace(/\.json$/, '');
-      if (e.data) byId[e._id] = e;
+      e._id = e.path.replace(/^.*\//, '').replace(/\.json$/, '');
+      if (e.data && typeof e.data === 'object' && !Array.isArray(e.data)) byId[e._id] = e;
     });
 
-    var covered = {};
+    var covered = {}, verified = {}, allocated = {}, anyVer = false, anyCmp = false;
     entries.forEach(function (e) {
       var id = e._id, d = e.data;
       if (!d) { add('error', id, 'parse', 'File is not valid JSON: ' + (e.parseError || 'parse error')); return; }
-      if (typeof d !== 'object' || Array.isArray(d)) { add('error', id, 'schema', 'File must contain a JSON object.'); return; }
-
-      var lvl = levels[e.dir];
-      if (!lvl) add('error', id, 'level', 'Folder "' + e.dir + '" is not a level defined in project.json.');
+      if (!byId[id]) { add('error', id, 'schema', 'File must contain a JSON object.'); return; }
+      var type = typeOf(id, proj);
+      if (!type) { add('error', id, 'type', 'ID prefix "' + prefixOf(id) + '" is not a known item type.'); return; }
+      if (!/^[A-Z]+-\d{3,}$/.test(id)) add('error', id, 'id-format', 'ID must look like ' + prefixOf(id) + '-001.');
+      if (e.path !== relPath(id, proj)) add('error', id, 'path', 'File should be at ' + relPath(id, proj) + '.');
       if (d.id !== id) add('error', id, 'id-file', 'Field id "' + d.id + '" does not match file name.');
-      if (!new RegExp('^' + e.dir + '-\\d{3,}$').test(id)) add('error', id, 'id-format', 'ID must look like ' + e.dir + '-001 and live in the ' + e.dir + ' folder.');
 
-      if (!d.title || !String(d.title).trim()) add('error', id, 'title', 'Title is required.');
-      if (!d.text || !String(d.text).trim()) add('error', id, 'text', 'Requirement statement is required.');
-      else if (!/\bshall\b/i.test(d.text)) add('warn', id, 'shall', 'Statement has no "shall".');
-
-      if (proj.statuses.indexOf(d.status) < 0) add('error', id, 'status', 'Status must be one of: ' + proj.statuses.join(', ') + '.');
-      if (proj.priorities.indexOf(d.priority) < 0) add('error', id, 'priority', 'Priority must be one of: ' + proj.priorities.join(', ') + '.');
-      if (d.verification != null && d.verification !== '' && proj.verification.indexOf(d.verification) < 0)
-        add('error', id, 'verification', 'Verification must be one of: ' + proj.verification.join(', ') + '.');
-      if (lvl && !hasChild[lvl.key] && !d.verification && d.status !== 'obsolete')
-        add('warn', id, 'no-verification', 'No verification method set.');
-
-      var traces = d.traces == null ? [] : d.traces;
-      if (!Array.isArray(traces)) { add('error', id, 'traces', 'traces must be a list of IDs.'); traces = []; }
-      if (!lvl) return;
-      if (!lvl.parent) {
-        if (traces.length) add('error', id, 'trace-top', 'Top-level requirements cannot trace upward.');
-        return;
-      }
-      var seen = {};
-      traces.forEach(function (t) {
-        if (seen[t]) add('warn', id, 'trace-dup', 'Duplicate trace to ' + t + '.');
-        seen[t] = true;
-        if (!byId[t]) add('error', id, 'trace-dangling', 'Traces to ' + t + ', which does not exist.');
-        else if (byId[t].dir !== lvl.parent) add('error', id, 'trace-level', 'Traces to ' + t + '; ' + lvl.key + ' requirements must trace to ' + lvl.parent + '.');
-        else {
-          if (d.status !== 'obsolete') covered[t] = true;
-          if (byId[t].data.status === 'obsolete' && d.status !== 'obsolete')
-            add('warn', id, 'trace-obsolete', 'Traces to ' + t + ', which is obsolete.');
+      fields(id, proj).forEach(function (f) {
+        var v = d[f.k];
+        if (isEmpty(v)) { if (f.req) add('error', id, f.k, f.label + ' is required.'); return; }
+        if (f.type === 'select' && f.opts.indexOf(v) < 0) add('error', id, f.k, f.label + ' must be one of: ' + f.opts.join(', ') + '.');
+        if (f.type === 'num' && !(v === Math.floor(v) && v >= 1 && v <= 5)) add('error', id, f.k, f.label + ' must be a whole number from 1 to 5.');
+        if (f.type === 'links' && !Array.isArray(v)) { add('error', id, f.k, f.label + ' must be a list of IDs.'); return; }
+        if (f.type === 'link' || f.type === 'links') {
+          var seen = {};
+          (f.type === 'link' ? [v] : v).forEach(function (t) {
+            if (seen[t]) add('warn', id, 'trace-dup', 'Duplicate link to ' + t + '.');
+            seen[t] = true;
+            if (!byId[t]) add('error', id, 'trace-dangling', f.label + ': ' + t + ' does not exist.');
+            else if (f.to.indexOf(prefixOf(t)) < 0) add('error', id, 'trace-level', f.label + ': ' + t + ' is not allowed here (expects ' + f.to.join(' or ') + ').');
+          });
         }
       });
-      if (!traces.length && d.status !== 'obsolete') add('warn', id, 'orphan', 'Does not trace to any ' + lvl.parent + ' requirement.');
+
+      var links = function (k) { return Array.isArray(d[k]) ? d[k].filter(function (t) { return byId[t]; }) : []; };
+      if (type === 'REQ') {
+        var lvl = levelDef(proj, prefixOf(id));
+        if (d.text && !/\bshall\b/i.test(d.text)) add('warn', id, 'shall', 'Statement has no "shall".');
+        if (lvl.key === leaf && !d.verification && d.status !== 'obsolete') add('warn', id, 'no-verification', 'No verification method set.');
+        if (!lvl.parent) { if (!isEmpty(d.traces)) add('error', id, 'trace-top', 'Top-level requirements cannot trace upward.'); return; }
+        links('traces').forEach(function (t) {
+          if (d.status !== 'obsolete') covered[t] = true;
+          if (byId[t].data.status === 'obsolete' && d.status !== 'obsolete') add('warn', id, 'trace-obsolete', 'Traces to ' + t + ', which is obsolete.');
+        });
+        if (isEmpty(d.traces) && d.status !== 'obsolete') add('warn', id, 'orphan', 'Does not trace to any ' + lvl.parent + ' requirement.');
+      } else if (type === 'CMP') {
+        anyCmp = true;
+        if (d.parent === id) add('error', id, 'parent', 'A component cannot be part of itself.');
+        links('allocated').forEach(function (t) { allocated[t] = true; });
+      } else if (type === 'IF') {
+        if (d.from && d.from === d.to) add('error', id, 'self', 'An interface needs two different components.');
+      } else if (type === 'VER') {
+        anyVer = true;
+        if (isEmpty(d.verifies)) add('warn', id, 'no-target', 'Does not verify any requirement.');
+        if (d.result === 'failed') add('warn', id, 'failed', 'Verification failed.');
+        links('verifies').forEach(function (t) { verified[t] = true; });
+      } else if (type === 'RSK') {
+        if (d.likelihood * d.impact >= 12 && d.status === 'open' && isEmpty(d.mitigation)) add('warn', id, 'unmitigated', 'High risk is open with no mitigation recorded.');
+      }
     });
 
     entries.forEach(function (e) {
-      var d = e.data, lvl = levels[e.dir];
-      if (!d || !lvl || !hasChild[lvl.key] || d.status === 'obsolete') return;
-      if (!covered[e._id]) add('warn', e._id, 'uncovered', 'No lower-level requirement traces to this.');
+      var d = e.data, id = e._id;
+      if (!byId[id] || typeOf(id, proj) !== 'REQ' || d.status === 'obsolete') return;
+      var key = prefixOf(id);
+      if (hasChildLevel[key] && !covered[id]) add('warn', id, 'uncovered', 'No lower-level requirement traces to this.');
+      if (key === leaf) {
+        if (anyVer && d.status === 'approved' && !verified[id]) add('warn', id, 'no-case', 'Approved, but no verification case covers it.');
+        if (anyCmp && !allocated[id]) add('warn', id, 'unallocated', 'Not allocated to any component.');
+      }
     });
 
     var rank = { error: 0, warn: 1 };
@@ -122,7 +227,8 @@
     return issues;
   }
 
-  var api = { DEFAULT_PROJECT: DEFAULT_PROJECT, project: project, levelOf: levelOf, reqPath: reqPath, serialize: serialize, validate: validate };
+  var api = { DEFAULT_PROJECT: DEFAULT_PROJECT, TYPES: TYPES, project: project, prefixOf: prefixOf, levelOf: prefixOf, leafKey: leafKey,
+    typeOf: typeOf, areaOf: areaOf, relPath: relPath, isItemPath: isItemPath, fields: fields, serialize: serialize, validate: validate };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SEModel = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

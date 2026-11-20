@@ -13,14 +13,37 @@ Engineers and reviewers  ->  static app (this repo: index.html + app/)
 
 ## What is here
 
+The landing page is a hub of small apps, each a view over one folder of the model:
+
+| App | Folder | Shows |
+| --- | --- | --- |
+| Requirements | `model/requirements/<LEVEL>/` | STK -> USER -> SYS with upward traces |
+| Architecture | `model/components/` | Product breakdown and requirement allocation |
+| Interfaces | `model/interfaces/` | Interface register and N2 matrix |
+| Verification | `model/verification/` | Cases, results and requirement coverage |
+| Risks | `model/risks/` | Register and likelihood x impact matrix |
+| Decisions | `model/decisions/` | Decision log and affected items |
+
+Trace, Validation, Changes and History cut across all of them.
+
 | Path | Purpose |
 | --- | --- |
 | `index.html`, `app/` | The static app. No build step, no dependencies. |
-| `app/model.js` | Schema, trace rules and canonical file format. Shared by the app and CI. |
-| `model/project.json` | Project name, levels (STK -> USER -> SYS) and allowed field values. |
-| `model/requirements/` | One JSON file per requirement. Sample model: "Harbour Sentinel". |
+| `app/model.js` | Item schemas, link rules and canonical file format. Shared by the app and CI. |
+| `model/project.json` | Project name, requirement levels and allowed field values. |
+| `model/team.json` | Simulated people, teams and per-folder access. |
 | `tools/validate.js` | Runs the same checks from the command line. |
-| `.github/workflows/validate.yml` | Runs the checks on every push and pull request. |
+| `.github/workflows/` | Validation on every push and pull request; Pages deploy. |
+
+## Simulated team
+
+`model/team.json` defines eleven people in seven teams, each with `own`, `write`,
+`read` or no access per folder. Pick a person in the hub ("Acting as") and the app
+behaves as it would for them: hidden areas disappear (links into them show as
+"restricted"), read-only areas cannot be edited, and commits are written with that
+person as the git author. GitHub itself still sees only the signed-in account, so this
+is a demonstration of the model, not enforcement. Real enforcement maps the same table
+onto CODEOWNERS, protected branches and a separate repository for hidden areas.
 
 ## Run it
 
@@ -76,4 +99,5 @@ in the URL preselects a repository; on GitHub Pages the repository is inferred f
 - New IDs are allocated per branch, so two branches can both create `SYS-011`. The
   merge will conflict on the file, which is visible but not friendly.
 - GitHub only. GitLab/Gitea need a second API adapter (`gh()` and the six calls around it).
+- Team access is simulated in the browser, not enforced by GitHub.
 - No restricted-repo split or Git LFS yet.

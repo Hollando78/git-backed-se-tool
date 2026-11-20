@@ -1,0 +1,13 @@
+{
+  "id": "RSK-006",
+  "title": "Sensor supplier lead time",
+  "description": "If the dissolved-oxygen probe lead time slips, then the first deployment misses the summer window.",
+  "likelihood": 3,
+  "impact": 3,
+  "status": "open",
+  "mitigation": "Order long-lead probes at preliminary design review.",
+  "owner": "Amara Okafor",
+  "affects": [
+    "CMP-003"
+  ]
+}

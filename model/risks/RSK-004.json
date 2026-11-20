@@ -1,0 +1,14 @@
+{
+  "id": "RSK-004",
+  "title": "Vessel strike",
+  "description": "If a vessel does not see a buoy, then a collision can damage the vessel and destroy the buoy.",
+  "likelihood": 2,
+  "impact": 5,
+  "status": "accepted",
+  "mitigation": "Marker light to IALA special mark characteristics; positions published in notices to mariners.",
+  "owner": "Sofia Marques",
+  "affects": [
+    "CMP-007",
+    "SYS-008"
+  ]
+}

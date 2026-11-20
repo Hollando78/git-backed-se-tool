@@ -1,0 +1,172 @@
+{
+  "note": "Simulated people and access rules for the demo. The app applies these in the browser; real enforcement belongs to the git host (CODEOWNERS, branch protection, separate repositories).",
+  "domain": "harbour-sentinel.example",
+  "teams": [
+    {
+      "key": "systems",
+      "name": "Systems engineering",
+      "access": {
+        "requirements/STK": "own",
+        "requirements/USER": "own",
+        "requirements/SYS": "own",
+        "components": "write",
+        "interfaces": "write",
+        "verification": "read",
+        "risks": "write",
+        "decisions": "own"
+      }
+    },
+    {
+      "key": "platform",
+      "name": "Buoy platform",
+      "access": {
+        "requirements/STK": "read",
+        "requirements/USER": "read",
+        "requirements/SYS": "write",
+        "components": "own",
+        "interfaces": "own",
+        "verification": "read",
+        "risks": "write",
+        "decisions": "write"
+      }
+    },
+    {
+      "key": "shore",
+      "name": "Shore software",
+      "access": {
+        "requirements/STK": "read",
+        "requirements/USER": "read",
+        "requirements/SYS": "write",
+        "components": "write",
+        "interfaces": "write",
+        "verification": "read",
+        "risks": "write",
+        "decisions": "write"
+      }
+    },
+    {
+      "key": "vv",
+      "name": "Verification and validation",
+      "access": {
+        "requirements/STK": "read",
+        "requirements/USER": "read",
+        "requirements/SYS": "read",
+        "components": "read",
+        "interfaces": "read",
+        "verification": "own",
+        "risks": "write",
+        "decisions": "read"
+      }
+    },
+    {
+      "key": "safety",
+      "name": "Safety and assurance",
+      "access": {
+        "requirements/STK": "read",
+        "requirements/USER": "read",
+        "requirements/SYS": "read",
+        "components": "read",
+        "interfaces": "read",
+        "verification": "read",
+        "risks": "own",
+        "decisions": "read"
+      }
+    },
+    {
+      "key": "client",
+      "name": "Harbour Authority (client)",
+      "access": {
+        "requirements/STK": "write",
+        "requirements/USER": "read",
+        "requirements/SYS": "read",
+        "components": "none",
+        "interfaces": "none",
+        "verification": "read",
+        "risks": "none",
+        "decisions": "read"
+      }
+    },
+    {
+      "key": "supplier",
+      "name": "Sensor supplier",
+      "access": {
+        "requirements/STK": "none",
+        "requirements/USER": "none",
+        "requirements/SYS": "read",
+        "components": "read",
+        "interfaces": "read",
+        "verification": "none",
+        "risks": "none",
+        "decisions": "none"
+      }
+    }
+  ],
+  "users": [
+    {
+      "login": "amara.okafor",
+      "name": "Amara Okafor",
+      "role": "Chief systems engineer",
+      "team": "systems"
+    },
+    {
+      "login": "tomas.reyes",
+      "name": "Tomás Reyes",
+      "role": "Requirements engineer",
+      "team": "systems"
+    },
+    {
+      "login": "ingrid.solberg",
+      "name": "Ingrid Solberg",
+      "role": "Platform lead",
+      "team": "platform"
+    },
+    {
+      "login": "kenji.watanabe",
+      "name": "Kenji Watanabe",
+      "role": "Embedded engineer",
+      "team": "platform"
+    },
+    {
+      "login": "priya.nair",
+      "name": "Priya Nair",
+      "role": "Shore software lead",
+      "team": "shore"
+    },
+    {
+      "login": "luca.bianchi",
+      "name": "Luca Bianchi",
+      "role": "Data engineer",
+      "team": "shore"
+    },
+    {
+      "login": "hannah.schmidt",
+      "name": "Hannah Schmidt",
+      "role": "V&V lead",
+      "team": "vv"
+    },
+    {
+      "login": "dele.adeyemi",
+      "name": "Dele Adeyemi",
+      "role": "Test engineer",
+      "team": "vv"
+    },
+    {
+      "login": "sofia.marques",
+      "name": "Sofia Marques",
+      "role": "Safety engineer",
+      "team": "safety"
+    },
+    {
+      "login": "robert.finch",
+      "name": "Robert Finch",
+      "role": "Harbour Authority representative",
+      "team": "client"
+    },
+    {
+      "login": "mei.lin",
+      "name": "Mei Lin",
+      "role": "Supplier applications engineer",
+      "team": "supplier"
+    }
+  ]
+}

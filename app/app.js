@@ -18,10 +18,10 @@
 
   const APPS = [
     { key: 'REQ', name: 'Requirements', blurb: 'What stakeholders, users and the system must do, traced level to level.' },
-    { key: 'CMP', name: 'Architecture', blurb: 'Product breakdown, with system requirements allocated to components.' },
-    { key: 'IF', name: 'Interfaces', blurb: 'Interface register and an N² view of what connects to what.' },
+    { key: 'PBS', name: 'Architecture', blurb: 'Product breakdown: the systems every requirement, risk and decision belongs to.' },
+    { key: 'INT', name: 'Interfaces', blurb: 'Interface register and an N² view of what connects to what.' },
     { key: 'VER', name: 'Verification', blurb: 'Verification cases, their results and requirement coverage.' },
-    { key: 'RSK', name: 'Risks', blurb: 'Risk register on a likelihood × impact matrix.' },
+    { key: 'RSK', name: 'Risks', blurb: 'Risks per system on a likelihood × impact map, with issues lit up.' },
     { key: 'DEC', name: 'Decisions', blurb: 'Design decisions, the options weighed and what they affect.' }
   ];
   const RANK = { none: 0, read: 1, write: 2, own: 3 };
@@ -211,10 +211,19 @@
   /* ---------------- model helpers ---------------- */
   const draftKey = () => `se.draft:${S.owner}/${S.repo}@${S.branch}`;
   const T = id => M.typeOf(id, S.project);
+  const P = id => M.prefixOf(id, S.project);
   const level = key => S.project.levels.find(l => l.key === key);
   const leaf = () => M.leafKey(S.project);
-  const idsOf = prefix => [...S.work.keys()].filter(id => M.prefixOf(id) === prefix && canSee(id)).sort();
+  const idsOf = prefix => [...S.work.keys()].filter(id => P(id) === prefix && canSee(id)).sort();
   const get = id => S.work.get(id);
+  /* Every item has one home system: the PBS element whose code is in its ID. */
+  const sysEl = code => idsOf('PBS').find(p => M.sysOf(p) === code) || '';
+  const elOf = id => sysEl(M.sysOf(id));
+  const homed = (el, prefix) => idsOf(prefix).filter(i => M.sysOf(i) === M.sysOf(el));
+  const sysLabel = id => { const e = elOf(id); return e ? `${M.sysOf(id)} · ${get(e).title}` : M.sysOf(id); };
+  const shortId = id => id.startsWith(S.project.code + '-') ? id.slice(S.project.code.length + 1) : id;
+  const chainOf = id => { const c = []; for (let x = id; x && S.work.has(x) && !c.includes(x); x = get(x).parent) c.unshift(x); return c; };
+  const intLevel = (a, b) => { const A = chainOf(a), B = chainOf(b); let i = 0; while (A[i] && A[i] === B[i]) i++; return Math.max(1, i); };
   const ser = d => M.serialize(d, S.project);
   /* Every (field, target) link an item holds. */
   const linksOf = (id, d) => M.fields(id, S.project).filter(f => f.type === 'link' || f.type === 'links')
@@ -222,7 +231,7 @@
   const backlinks = id => [...S.work].filter(([oid, d]) => oid !== id && canSee(oid) && linksOf(oid, d).some(l => l.to === id)).map(([oid]) => oid).sort();
   const linking = (prefix, key, id) => idsOf(prefix).filter(o => [].concat(get(o)[key] || []).includes(id));
   const childLevel = key => S.project.levels.find(l => l.parent === key);
-  const childrenOf = id => { const c = childLevel(M.prefixOf(id)); return c ? linking(c.key, 'traces', id) : []; };
+  const childrenOf = id => { const c = childLevel(P(id)); return c ? linking(c.key, 'traces', id) : []; };
   const visLevels = () => S.project.levels.filter(l => RANK[acc('requirements/' + l.key)] >= 1);
 
   function changes() {
@@ -245,13 +254,13 @@
       .concat(S.bad.map(b => ({ path: b.rel, data: null, parseError: b.parseError })));
     return M.validate(S.project, entries).filter(i => !M.areaOf(i.id, S.project) || canSee(i.id));
   }
-  function nextId(prefix) {
-    const nums = [...S.work.keys(), ...S.base.keys()].filter(id => M.prefixOf(id) === prefix).map(id => parseInt(id.split('-')[1], 10) || 0);
-    return prefix + '-' + String(Math.max(0, ...nums) + 1).padStart(3, '0');
+  function nextNum(code) {
+    const nums = [...S.work.keys(), ...S.base.keys()].filter(id => M.codeOf(id) === code).map(id => parseInt(id.split('-').pop(), 10) || 0);
+    return Math.max(0, ...nums) + 1;
   }
   function fixView() {
     const app = S.view.startsWith('app:') && S.view.slice(4);
-    const known = ['hub', 'trace', 'validation', 'team', 'changes', 'history'].includes(S.view) || APPS.some(a => a.key === app);
+    const known = ['hub', 'trace', 'metrics', 'validation', 'team', 'changes', 'history'].includes(S.view) || APPS.some(a => a.key === app);
     if (!known || (app && appAcc(app) === 'none')) S.view = 'hub';
     if (!visLevels().some(l => l.key === S.level)) S.level = visLevels()[0]?.key || '';
   }
@@ -318,9 +327,18 @@
     setTimeout(() => d.remove(), err ? 9000 : 6000);
   }
   const chip = (cls, text) => `<span class="chip ${cls}">${esc(text)}</span>`;
-  const TONES = { grey: ['draft', 'planned', 'proposed', 'open', 'not assessed'], amber: ['review', 'mitigating', 'agreed', 'blocked', 'likely to change', 'partially compliant'], green: ['approved', 'passed', 'accepted', 'baselined', 'closed', 'stable', 'compliant'], red: ['obsolete', 'failed', 'superseded', 'volatile', 'non-compliant'] };
+  const TONES = { grey: ['draft', 'planned', 'proposed', 'open'], amber: ['review', 'mitigating', 'agreed', 'blocked', 'developing', 'compliance risk'], green: ['approved', 'passed', 'accepted', 'baselined', 'closed', 'stable', 'compliant'], red: ['obsolete', 'failed', 'superseded', 'unstable', 'non-compliant', 'impacting'] };
   const tone = s => Object.keys(TONES).find(t => TONES[t].includes(s)) || 'grey';
   const dot = s => `<span class="dot t-${tone(s)}"></span>`;
+  /* Red / amber / green by position in the project's list, so renamed criteria keep their colour. */
+  const ragTone = (k, v) => ['green', 'amber', 'red'][S.project[k === 'stability' ? 'stabilities' : 'compliances'].indexOf(v)] || 'grey';
+  const rag = (k, v) => v ? `<span class="rag t-${ragTone(k, v)}">${esc(v)}</span>` : '';
+  function ragBar(ids, k) {
+    if (!ids.length) return '<span class="muted">–</span>';
+    const n = { green: 0, amber: 0, red: 0, grey: 0 };
+    ids.forEach(id => { n[ragTone(k, get(id)[k])]++; });
+    return `<div class="ragbar" title="green ${n.green}, amber ${n.amber}, red ${n.red}, not set ${n.grey}">${['green', 'amber', 'red', 'grey'].map(t => n[t] ? `<i class="t-${t}" style="flex:${n[t]}">${n[t]}</i>` : '').join('')}</div>`;
+  }
   const st = s => `<span>${dot(s)}${esc(s)}</span>`;
   const when = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); };
   const refbtn = id => !S.work.has(id) ? `<span class="refbtn bad">${esc(id)}</span>`
@@ -356,6 +374,7 @@
           ${APPS.map(a => nav('app:' + a.key, a.name, null, false, appAcc(a.key) === 'none')).join('')}
           <div class="nav-sep"></div>
           ${nav('trace', 'Trace')}
+          ${nav('metrics', 'Metrics')}
           ${nav('validation', 'Validation', iss.length || null, iss.some(i => i.severity === 'error'))}
           ${nav('team', 'Team and access')}
           <div class="nav-sep"></div>
@@ -412,12 +431,13 @@
     const accNote = app && p ? `<div class="banner sim">${avatar(p, 20)} <b>${esc(p.name)}</b> · ${esc(teamOf(p).name)}: ${esc(ACC_LABEL[appAcc(app)].toLowerCase())} here.</div>` : '';
     if (S.view === 'hub') return top(S.project.name, esc(S.project.description || '')) + ro + hubView(iss, ch, p);
     if (S.view === 'trace') return top('Trace', 'Hover an item to follow its chain from stakeholder need to verification.') + traceView(iss);
+    if (S.view === 'metrics') return top('Metrics', 'Stability and compliance at a glance, by requirement level and by system.') + metricsView();
     if (S.view === 'validation') return top('Validation', 'Schema and link checks, run in the browser on every edit and in CI on every push.') + validationView(iss);
     if (S.view === 'team') return top('Team and access', 'Who is on the project and what each team may see or change.') + teamView(p);
     if (S.view === 'changes') return top('Changes', `Staged edits on <span class="mono">${esc(S.branch)}</span>, kept in this browser until committed.`) + ro + changesView(ch, iss, p);
     if (S.view === 'history') return top('History', `Commits touching <span class="mono">${esc(S.root)}/</span> on <span class="mono">${esc(S.branch)}</span>.`) + `<div class="card">${commitList(S.commits) || '<div class="empty">No commits found.</div>'}</div>`;
     const a = APPS.find(x => x.key === app);
-    const right = { REQ: () => newBtn(S.level, S.level), CMP: () => newBtn('CMP', 'component'), IF: () => newBtn('IF', 'interface'), VER: () => newBtn('VER', 'case'), RSK: () => newBtn('RSK', 'risk'), DEC: () => newBtn('DEC', 'decision') }[app]();
+    const right = { REQ: () => newBtn(S.level, S.level) + (S.level === leaf() ? newBtn('ASS', 'assumption') : ''), PBS: () => newBtn('PBS', 'system'), INT: () => newBtn('INT', 'interface'), VER: () => newBtn('VER', 'case'), RSK: () => newBtn('RSK', 'risk'), DEC: () => newBtn('DEC', 'decision') }[app]();
     const printHead = `<div class="print-head"><b>${esc(S.project.name)}</b> · ${esc(a.name)} · ${esc(S.owner)}/${esc(S.repo)} @ ${esc(S.head.sha.slice(0, 7))} (${esc(S.branch)}) · ${esc(when(new Date().toISOString()))}</div>`;
     return printHead + top(a.name, esc(a.blurb), right) + ro + accNote + appViews[app](iss, ch);
   }
@@ -426,14 +446,15 @@
   function appStat(k) {
     if (k === 'REQ') {
       const all = visLevels().flatMap(l => idsOf(l.key));
-      const lower = all.filter(id => level(M.prefixOf(id)).parent && get(id).status !== 'obsolete');
-      return [plural(all.length, 'requirement'), `${pct(lower.filter(id => (get(id).traces || []).length).length, lower.length)} traced upward`];
+      const lower = all.filter(id => level(P(id)).parent && get(id).status !== 'obsolete' && get(id).object === 'requirement');
+      const na = all.filter(id => M.codeOf(id) === 'ASS').length;
+      return [`${plural(all.length - na, 'requirement')}, ${plural(na, 'assumption')}`, `${pct(lower.filter(id => (get(id).traces || []).length).length, lower.length)} traced upward`];
     }
     const list = idsOf(k), n = v => list.filter(id => v(get(id))).length;
-    if (k === 'CMP') { const sys = idsOf(leaf()); return [plural(list.length, 'component'), sys.length ? `${sys.filter(id => linking('CMP', 'allocated', id).length).length}/${sys.length} ${leaf()} allocated` : '']; }
-    if (k === 'IF') return [plural(list.length, 'interface'), `${n(d => d.status === 'baselined')} baselined, ${n(d => d.status === 'draft')} draft`];
+    if (k === 'PBS') return [plural(list.length, 'system'), `${n(d => d.status === 'approved')} approved, ${n(d => d.status !== 'approved')} proposed`];
+    if (k === 'INT') return [plural(list.length, 'interface'), `${n(d => d.status === 'baselined')} baselined, ${n(d => d.status === 'draft')} draft`];
     if (k === 'VER') return [plural(list.length, 'case'), `${n(d => d.result === 'passed')} passed, ${n(d => d.result === 'failed')} failed`];
-    if (k === 'RSK') return [`${n(d => d.status !== 'closed')} active risks`, `${n(d => d.status !== 'closed' && d.likelihood * d.impact >= 12)} high`];
+    if (k === 'RSK') return [`${n(d => d.status !== 'closed')} active risks`, `${n(d => d.status === 'impacting')} impacting (issues), ${n(d => d.status !== 'closed' && d.likelihood * d.impact >= 12)} high`];
     return [plural(list.length, 'decision'), `${n(d => d.status === 'proposed')} awaiting a decision`];
   }
   function hubView(iss, ch, p) {
@@ -455,6 +476,7 @@
       }).join('')}</div>
       <div class="grid tiles small">
         <button class="card tile" data-act="view" data-view="trace"><span class="tile-head"><b>Trace</b></span><span class="tile-blurb">Need to requirement to verification, end to end.</span></button>
+        <button class="card tile" data-act="view" data-view="metrics"><span class="tile-head"><b>Metrics</b></span><span class="tile-blurb">RAG status for stability and compliance, by level and system.</span></button>
         <button class="card tile" data-act="view" data-view="validation"><span class="tile-head"><b>Validation</b>${iss.length ? chip(errs ? 'error' : 'warn', errs ? plural(errs, 'error') : plural(iss.length, 'warning')) : chip('add', 'clean')}</span><span class="tile-blurb">Model checks that also run in CI.</span></button>
         <button class="card tile" data-act="view" data-view="changes"><span class="tile-head"><b>Changes</b>${ch.length ? chip('mod', ch.length + ' staged') : ''}</span><span class="tile-blurb">Review staged edits, then commit or open a pull request.</span></button>
       </div>
@@ -484,23 +506,23 @@
     const c = ch.find(x => x.id === id), mine = iss.filter(i => i.id === id), t = T(id);
     let body = '', links = '', side = '';
     if (t === 'REQ') {
-      const l = level(M.prefixOf(id)), child = childLevel(l.key), kids = gone ? [] : childrenOf(id);
+      const l = level(P(id)), child = childLevel(l.key), kids = gone ? [] : childrenOf(id);
       body = d.text;
       links = (l.parent ? `↑ ${refText(d.traces || []) || '<span class="amber">no parent</span>'}<br>` : '') +
         (child ? `↓ ${kids.length ? kids.length + ' ' + esc(child.key) : '<span class="amber">not covered</span>'}` : (d.verification ? 'verify: ' + esc(d.verification) : ''));
       side = st(d.status) + `<span class="muted">${esc(d.priority)}</span>`;
-    } else if (t === 'CMP') {
+    } else if (t === 'PBS') {
       body = d.description;
-      links = `${(d.allocated || []).length} allocated<br>${idsOf('IF').filter(i => get(i).from === id || get(i).to === id).length} interfaces`;
+      links = `${homed(id, leaf()).length} requirements<br>${idsOf('INT').filter(i => get(i).from === id || get(i).to === id).length} interfaces`;
       side = chip('', d.kind);
-    } else if (t === 'IF') {
+    } else if (t === 'INT') {
       body = d.description; links = `${refText([d.from])} → ${refText([d.to])}<br>${refText(d.requirements || [])}`;
       side = st(d.status) + `<span class="muted">${esc(d.kind)}</span>`;
     } else if (t === 'VER') {
       body = d.procedure; links = `verifies ${refText(d.verifies || []) || '<span class="amber">nothing</span>'}`;
       side = st(d.result) + `<span class="muted">${esc(d.method)}</span>`;
     } else if (t === 'RSK') {
-      body = d.description; links = `L${esc(d.likelihood)} × I${esc(d.impact)} = <b>${d.likelihood * d.impact}</b><br>${esc(d.owner || '')}`;
+      body = d.cause; links = `L${esc(d.likelihood)} × I${esc(d.impact)} = <b>${d.likelihood * d.impact}</b><br>${esc(d.owner || '')}`;
       side = st(d.status);
     } else {
       body = d.decision || d.context; links = `affects ${refText(d.affects || [])}`; side = st(d.status);
@@ -513,17 +535,17 @@
     </button>`;
   }
   function listOf(prefix, iss, ch, { filter, sort } = {}) {
-    const deleted = ch.filter(c => c.type === 'del' && M.prefixOf(c.id) === prefix && canSee(c.id)).map(c => c.id);
+    const deleted = ch.filter(c => c.type === 'del' && P(c.id) === prefix && canSee(c.id)).map(c => c.id);
     let list = [...idsOf(prefix), ...deleted].sort().filter(id => { const d = get(id) || S.base.get(id).data; return match(id, d) && (!filter || filter(d)); });
     if (sort) list = list.sort(sort);
     return `<div class="reqs">${list.map(id => row(id, iss, ch)).join('') || `<div class="empty">${S.q ? 'Nothing matches the search.' : 'Nothing here yet.'}</div>`}</div>`;
   }
 
   /* ---------------- product breakdown helpers ---------------- */
-  const cmpKids = id => idsOf('CMP').filter(c => get(c).parent === id);
+  const cmpKids = id => idsOf('PBS').filter(c => get(c).parent === id);
   /* Depth-first list of visible components: [{ id, depth }] */
   function pbsOrder() {
-    const all = idsOf('CMP'), seen = new Set(), out = [];
+    const all = idsOf('PBS'), seen = new Set(), out = [];
     const walk = (id, depth) => { if (seen.has(id)) return; seen.add(id); out.push({ id, depth }); cmpKids(id).forEach(c => walk(c, depth + 1)); };
     all.filter(id => !all.includes(get(id).parent)).forEach(r => walk(r, 0));
     all.forEach(id => walk(id, 0));   // anything left is in a parent cycle
@@ -535,33 +557,79 @@
     walk(id, 0);
     return out;
   }
-  const rolled = id => new Set(subtree(id, 'all').flatMap(e => (get(e.id).allocated || []).filter(r => S.work.has(r) && canSee(r))));
+  const rolled = (id, prefix = leaf()) => new Set(subtree(id, 'all').flatMap(e => homed(e.id, prefix)));
 
   /* ---------------- grid: spreadsheet-style table with column chooser, sort and export ---------------- */
   function reqCols(lvl) {
     const off = ['object', 'rationale', 'stabilityRationale', 'complianceRationale', 'complianceEvidence', 'priority'];
     const wide = { title: 160, text: 320, rationale: 240, source: 150, stabilityRationale: 220, complianceRationale: 240, complianceEvidence: 220 };
-    const cols = [{ k: 'id', label: 'ID' }];
+    const cols = [{ k: 'id', label: 'ID' }, { k: '_sys', label: 'System', get: id => sysLabel(id) }];
     M.fields(lvl + '-000', S.project).forEach(f => cols.push({ k: f.k, label: f.k === 'traces' ? 'Traces to' : f.label, w: wide[f.k], off: off.includes(f.k),
-      dot: ['stability', 'compliance', 'status'].includes(f.k), get: (id, d) => f.type === 'links' ? refText(d[f.k] || []) : show(d[f.k]) }));
-    if (lvl === leaf()) {
-      if (RANK[acc('components')] >= 1) cols.push({ k: '_alloc', label: 'Allocated to', get: id => linking('CMP', 'allocated', id).join(', ') });
-      if (RANK[acc('verification')] >= 1) cols.push({ k: '_cases', label: 'Verified by', off: true, get: id => linking('VER', 'verifies', id).join(', ') });
-    }
+      dot: f.k === 'status', rag: f.rag, get: (id, d) => f.type === 'links' ? refText(d[f.k] || []) : show(d[f.k]) }));
+    if (lvl === leaf() && RANK[acc('verification')] >= 1) cols.push({ k: '_cases', label: 'Verified by', off: true, get: id => linking('VER', 'verifies', id).join(', ') });
     return cols;
   }
   const cmpCols = () => [
     { k: 'id', label: 'ID' },
     { k: 'title', label: 'System name', w: 220, tree: true, get: (id, d) => d.title },
     { k: 'kind', label: 'Kind', get: (id, d) => d.kind },
+    { k: 'status', label: 'Control status', dot: true, get: (id, d) => d.status || '' },
     { k: 'owner', label: 'System owner', get: (id, d) => d.owner || '' },
     { k: 'company', label: 'Owner company', get: (id, d) => d.company || '' },
     { k: 'parent', label: 'Part of', get: (id, d) => d.parent || '' },
-    { k: '_own', label: 'Requirements', get: (id, d) => (d.allocated || []).length },
+    { k: '_own', label: 'Requirements', get: id => homed(id, leaf()).length },
     { k: '_all', label: 'Incl. levels below', get: id => S.work.has(id) ? rolled(id).size : '' },
-    { k: '_if', label: 'Interfaces', get: id => idsOf('IF').filter(i => get(i).from === id || get(i).to === id).length },
+    { k: '_if', label: 'Interfaces', get: id => idsOf('INT').filter(i => get(i).from === id || get(i).to === id).length },
+    ...(RANK[acc('risks')] >= 1 ? [{ k: '_rsk', label: 'Active risks', get: id => homed(id, 'RSK').filter(r => get(r).status !== 'closed').length }] : []),
     { k: 'description', label: 'Description', w: 280, off: true, get: (id, d) => d.description || '' }
   ];
+  const rskCols = () => {
+    const lab = (arr, v) => v ? `${v} · ${arr[v - 1] || ''}` : '';
+    return [
+      { k: 'id', label: 'ID' }, { k: '_sys', label: 'System', get: id => sysLabel(id) },
+      { k: 'title', label: 'Title', w: 180, get: (id, d) => d.title },
+      { k: 'cause', label: 'If', w: 230, get: (id, d) => d.cause || '' }, { k: 'consequence', label: 'Then', w: 230, get: (id, d) => d.consequence || '' },
+      { k: 'likelihood', label: 'Likelihood', get: (id, d) => lab(S.project.likelihoodLabels, d.likelihood) },
+      { k: 'impact', label: 'Impact', get: (id, d) => lab(S.project.impactLabels, d.impact) },
+      { k: '_score', label: 'Score', get: (id, d) => d.likelihood * d.impact },
+      { k: 'status', label: 'Status', dot: true, get: (id, d) => d.status },
+      { k: 'owner', label: 'Owner', get: (id, d) => d.owner || '' },
+      { k: 'mitigation', label: 'Mitigation', w: 240, off: true, get: (id, d) => d.mitigation || '' },
+      { k: 'requirements', label: 'Related requirements', off: true, get: (id, d) => refText(d.requirements || []) }
+    ];
+  };
+  /* System selector shared by the per-system pages (requirements, risks). */
+  function sysBar(prefix, allLabel) {
+    const order = pbsOrder();
+    if (!idsOf('PBS').includes(S.spec)) S.spec = '';
+    if (!order.length) return '';
+    const path = chainOf(S.spec).filter(c => canSee(c));
+    return `<div class="card specbar">
+      <label class="field"><span>System</span><select data-change="spec">
+        <option value="">${esc(allLabel)}</option>
+        ${order.map(e => `<option value="${esc(e.id)}" ${e.id === S.spec ? 'selected' : ''}>${'\u00a0\u00a0\u00a0'.repeat(e.depth)}${esc(M.sysOf(e.id))} · ${esc(get(e.id).title)} (${rolled(e.id, prefix).size})</option>`).join('')}</select></label>
+      ${S.spec ? `<label class="field"><span>Levels shown</span><select data-change="specDepth">
+        ${[['0', 'This system only (n)'], ['1', 'Down to n+1'], ['2', 'Down to n+2'], ['all', 'All levels below']].map(([v, t]) => `<option value="${v}" ${String(S.specDepth) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+      <div class="crumbs"><span class="section-lbl">Path</span> ${path.map((c, i) => i === path.length - 1 ? `<b>${esc(get(c).title)}</b>` : `<button class="linkish dark" data-act="spec" data-stay="1" data-id="${esc(c)}">${esc(get(c).title)}</button> ›`).join(' ')}
+        ${cmpKids(S.spec).length ? `<span class="section-lbl" style="margin-left:14px">n+1</span> ${cmpKids(S.spec).map(c => `<button class="refbtn" data-act="spec" data-stay="1" data-id="${esc(c)}">${esc(get(c).title)}</button>`).join('')}` : ''}</div>`
+      : `<div class="help" style="align-self:center">Pick a system to see only what belongs to it, grouped with the levels below it.</div>`}
+    </div>`;
+  }
+  /* Rows for a per-system page: grouped by system when one is selected, otherwise a flat list. Call sysBar first. */
+  function scopedRows(prefix, pass, ch, sorter) {
+    const srt = l => sorter ? l.sort(sorter) : l.sort();
+    if (S.spec) {
+      const rows = [];
+      subtree(S.spec, S.specDepth).forEach(e => {
+        const list = srt(homed(e.id, prefix).filter(pass));
+        rows.push({ group: true, el: e.id, depth: e.depth, n: list.length });
+        list.forEach(r => rows.push({ id: r, el: e.id }));
+      });
+      return rows;
+    }
+    const deleted = ch.filter(c => c.type === 'del' && P(c.id) === prefix && canSee(c.id)).map(c => c.id);
+    return srt([...idsOf(prefix), ...deleted].filter(pass)).map(id => ({ id }));
+  }
   const colHidden = (key, c) => { const h = S.grid[key]?.hidden; return c.k !== 'id' && (h ? h.includes(c.k) : !!c.off); };
   const cellOf = (c, id, d) => c.k === 'id' ? id : c.get(id, d);
   function grid(key, cols, rows, iss, ch, name) {
@@ -576,12 +644,12 @@
     const items = rows.filter(r => !r.group);
     const body = rows.map(r => {
       if (r.group) { const e = get(r.el); return `<tr class="grp"><td colspan="${vis.length}"><span style="padding-left:${r.depth * 16}px"></span><span class="lvl">${r.depth ? 'n+' + r.depth : 'n'}</span>
-        <button class="linkish dark mono" data-act="open" data-id="${esc(r.el)}">${esc(r.el)}</button> <b>${esc(e.title)}</b>${e.company ? ` · ${esc(e.company)}` : ''} <span class="muted">· ${plural(r.n, 'requirement')}</span></td></tr>`; }
+        <button class="linkish dark mono" data-act="open" data-id="${esc(r.el)}">${esc(M.sysOf(r.el))}</button> <b>${esc(e.title)}</b>${e.company ? ` · ${esc(e.company)}` : ''} <span class="muted">· ${plural(r.n, 'item')}</span></td></tr>`; }
       const d = data(r.id), gone = !S.work.has(r.id), c = ch.find(x => x.id === r.id), mine = iss.filter(i => i.id === r.id);
       return `<tr class="${c ? 'changed' : ''} ${gone ? 'gone' : ''}" data-act="open" data-id="${esc(r.id)}" tabindex="0">${vis.map(col => {
         if (col.k === 'id') return `<th scope="row"><span class="ref">${esc(r.id)}</span>${c ? chip(c.type, { add: 'new', mod: 'edited', del: 'deleted' }[c.type]) : ''}${mine.length ? chip(mine[0].severity, mine.length + (mine[0].severity === 'error' ? ' err' : ' warn')) : ''}</th>`;
         const v = cellOf(col, r.id, d);
-        return `<td class="${col.w ? '' : 'nw'}" ${col.tree && !g.sort ? `style="padding-left:${9 + (r.depth || 0) * 16}px"` : ''}>${col.dot && v ? dot(v) : ''}${col.tree ? `<b>${esc(v)}</b>` : esc(v)}</td>`;
+        return `<td class="${col.w ? '' : 'nw'}" ${col.tree && !g.sort ? `style="padding-left:${9 + (r.depth || 0) * 16}px"` : ''}>${col.rag ? rag(col.k, v) : (col.dot && v ? dot(v) : '') + (col.tree ? `<b>${esc(v)}</b>` : esc(v))}</td>`;
       }).join('')}</tr>`;
     }).join('');
     return `<div class="grid-bar"><span class="n">${plural(items.length, 'row')}${grouped ? ` in ${plural(rows.length - items.length, 'system')}` : ''} · ${vis.length} of ${cols.length} columns</span>
@@ -598,8 +666,8 @@
     const { cols, rows, name } = S.lastGrid, grouped = rows.some(r => r.group);
     // A leading quote stops spreadsheet apps from running a cell as a formula.
     const cell = v => { v = String(v ?? ''); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    const head = [...(grouped ? ['System ID', 'System name'] : []), ...cols.map(c => c.label)];
-    const lines = [head, ...rows.filter(r => !r.group).map(r => { const d = get(r.id) || S.base.get(r.id).data; return [...(grouped ? [r.el, get(r.el).title] : []), ...cols.map(c => cellOf(c, r.id, d))]; })];
+    const head = cols.map(c => c.label);
+    const lines = [head, ...rows.filter(r => !r.group).map(r => { const d = get(r.id) || S.base.get(r.id).data; return cols.map(c => cellOf(c, r.id, d)); })];
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(['﻿' + lines.map(l => l.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
     a.download = `${S.project.name}-${name}-${S.head.sha.slice(0, 7)}.csv`.replace(/[^\w.-]+/g, '-');
@@ -613,70 +681,46 @@
     REQ(iss, ch) {
       const l = level(S.level);
       if (!l) return '<div class="card empty">No requirement level is visible to you.</div>';
-      const structured = l.key === leaf() && idsOf('CMP').length > 0;
-      if (!structured || !idsOf('CMP').includes(S.spec)) S.spec = '';
-      const FILTERS = [['status', 'statuses', 'All statuses'], ['type', 'reqTypes', 'All types'], ['compliance', 'compliances', 'Any compliance'], ['stability', 'stabilities', 'Any stability']];
+      const FILTERS = [['object', [...S.project.objectTypes, 'assumption'], 'All object types'], ['status', S.project.statuses, 'All statuses'], ['type', S.project.reqTypes, 'All types'], ['compliance', S.project.compliances, 'Any compliance'], ['stability', S.project.stabilities, 'Any stability']];
       const pass = id => { const d = get(id) || S.base.get(id).data; return match(id, d) && FILTERS.every(([k]) => !S.f[k] || d[k] === S.f[k]); };
-      let rows;
-      if (S.spec) {
-        rows = [];
-        subtree(S.spec, S.specDepth).forEach(e => {
-          const list = (get(e.id).allocated || []).filter(r => M.prefixOf(r) === l.key && S.work.has(r) && canSee(r) && pass(r)).sort();
-          rows.push({ group: true, el: e.id, depth: e.depth, n: list.length });
-          list.forEach(r => rows.push({ id: r, el: e.id }));
-        });
-      } else {
-        const deleted = ch.filter(c => c.type === 'del' && M.prefixOf(c.id) === l.key && canSee(c.id)).map(c => c.id);
-        rows = [...idsOf(l.key), ...deleted].sort().filter(pass).map(id => ({ id }));
-      }
-      const order = structured ? pbsOrder() : [];
-      const path = []; for (let c = S.spec; c && !path.includes(c); c = idsOf('CMP').includes(get(c).parent) ? get(c).parent : '') path.unshift(c);
-      const specBar = !structured ? '' : `<div class="card specbar">
-          <label class="field"><span>Specification</span><select data-change="spec">
-            <option value="">All ${esc(l.key)} requirements (flat list)</option>
-            ${order.map(e => `<option value="${esc(e.id)}" ${e.id === S.spec ? 'selected' : ''}>${'   '.repeat(e.depth)}${esc(e.id)} · ${esc(get(e.id).title)} (${rolled(e.id).size})</option>`).join('')}</select></label>
-          ${S.spec ? `<label class="field"><span>Levels shown</span><select data-change="specDepth">
-            ${[['0', 'This element only (n)'], ['1', 'Down to n+1'], ['2', 'Down to n+2'], ['all', 'All levels below']].map(([v, t]) => `<option value="${v}" ${String(S.specDepth) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
-          <div class="crumbs"><span class="section-lbl">Path</span> ${path.map((c, i) => i === path.length - 1 ? `<b>${esc(get(c).title)}</b>` : `<button class="linkish dark" data-act="spec" data-id="${esc(c)}">${esc(get(c).title)}</button> ›`).join(' ')}
-            ${cmpKids(S.spec).length ? `<span class="section-lbl" style="margin-left:14px">n+1</span> ${cmpKids(S.spec).map(c => `<button class="refbtn" data-act="spec" data-id="${esc(c)}" title="Open this specification">${esc(get(c).title)}</button>`).join('')}` : ''}</div>` : `<div class="help" style="align-self:center">Pick a system to see its requirements structured by the product breakdown, with the levels below it.</div>`}
-        </div>`;
+      const specBar = sysBar(l.key, `All systems: every ${l.key} item`);
+      const rows = scopedRows(l.key, pass, ch);
       return `<div class="tabs">${S.project.levels.map(x => RANK[acc('requirements/' + x.key)] >= 1
           ? `<button data-act="level" data-level="${esc(x.key)}" class="${x.key === l.key ? 'on' : ''}"><span class="mono">${esc(x.key)}</span> ${esc(x.name)} <span class="count">${idsOf(x.key).length}</span></button>`
           : `<button disabled><span class="mono">${esc(x.key)}</span> ${esc(x.name)} <span class="count">locked</span></button>`).join('')}</div>
         ${specBar}
         <div class="tools">${search(`${l.key}: any attribute`)}
-          ${FILTERS.map(([k, opts, any]) => `<select data-change="filter" data-f="${k}" aria-label="${any}"><option value="">${any}</option>${S.project[opts].map(o => `<option ${S.f[k] === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`).join('')}</div>
-        ${grid('req:' + l.key, reqCols(l.key), rows, iss, ch, `${l.key}${S.spec ? '-' + S.spec : ''}`)}`;
+          ${FILTERS.map(([k, opts, any]) => `<select data-change="filter" data-f="${k}" aria-label="${any}"><option value="">${any}</option>${opts.map(o => `<option ${S.f[k] === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`).join('')}</div>
+        ${grid('req:' + l.key, reqCols(l.key), rows, iss, ch, `${l.key}${S.spec ? '-' + M.sysOf(S.spec) : ''}`)}`;
     },
-    CMP(iss, ch) {
+    PBS(iss, ch) {
       const order = pbsOrder(), max = Math.max(0, ...order.map(e => e.depth));
       S.zoom = Math.min(S.zoom, max);
       const box = (id, depth) => {
-        const d = get(id), kids = cmpKids(id), own = (d.allocated || []).length, all = rolled(id).size;
-        return `<div class="pbs k-${esc(d.kind)}"><button class="pbs-head" data-act="spec" data-id="${esc(id)}" title="Open the specification for ${esc(d.title)}">
-            <span class="ref">${esc(id)}</span><b>${esc(d.title)}</b>${d.company ? `<span class="pbs-co">${esc(d.company)}</span>` : ''}
+        const d = get(id), kids = cmpKids(id), own = homed(id, leaf()).length, all = rolled(id).size;
+        return `<div class="pbs k-${esc(d.kind)} c-${esc(d.status)}"><button class="pbs-head" data-act="spec" data-id="${esc(id)}" title="Open the specification for ${esc(d.title)}">
+            <span class="ref">${esc(M.sysOf(id))}${d.status === 'approved' ? '' : ' · ' + esc(d.status || 'not approved')}</span><b>${esc(d.title)}</b>${d.company ? `<span class="pbs-co">${esc(d.company)}</span>` : ''}
             <span class="pbs-n">${own} req${own === 1 ? '' : 's'}${all > own ? ` · ${all} incl. below` : ''}</span></button>
           ${kids.length ? (depth < S.zoom ? `<div class="pbs-kids">${kids.map(k => box(k, depth + 1)).join('')}</div>`
             : `<button class="pbs-more" data-act="zoom" data-z="${depth + 1}">+ ${subtree(id, 'all').length - 1} below</button>`) : ''}</div>`;
       };
       const roots = order.filter(e => e.depth === 0).map(e => e.id);
       const rows = order.filter(e => match(e.id, get(e.id))).map(e => ({ id: e.id, depth: e.depth }));
-      const sys = idsOf(leaf()), un = sys.filter(id => !linking('CMP', 'allocated', id).length && get(id).status !== 'obsolete');
       return `<div class="card" style="margin-bottom:16px"><div class="zoombar"><h3 style="margin:0">Product breakdown</h3>
             <span class="section-lbl" style="margin-left:auto">Zoom</span>${Array.from({ length: max + 1 }, (_, z) => `<button data-act="zoom" data-z="${z}" class="${z === S.zoom ? 'on' : ''}">${z ? 'n+' + z : 'n'}</button>`).join('')}</div>
-          <div class="muted" style="margin:4px 0 12px">Click a system to open its specification. Zoom out to hide lower levels on a large breakdown.</div>
+          <div class="muted" style="margin:4px 0 12px">Click a system to open its requirements. Zoom out to hide lower levels on a large breakdown.</div>
           <div class="scroll"><div class="pbs-root">${roots.map(r => box(r, 0)).join('') || '<div class="muted">No components yet.</div>'}</div></div></div>
         <div class="tools">${search('the breakdown')}</div>
         ${grid('cmp', cmpCols(), rows, iss, ch, 'PBS')}
-        ${un.length ? `<div class="card" style="margin-top:16px"><div class="section-lbl" style="margin-bottom:6px">${esc(leaf())} requirements not allocated to any system</div>${un.map(refbtn).join('')}</div>` : ''}`;
+        <div class="legend"><span>${dot('approved')}approved: controlled, risks may be raised against it</span><span>${dot('proposed')}proposed</span></div>`;
     },
-    IF(iss, ch) {
-      const ifs = idsOf('IF'), comps = idsOf('CMP').filter(c => ifs.some(i => get(i).from === c || get(i).to === c));
+    INT(iss, ch) {
+      const ifs = idsOf('INT'), comps = idsOf('PBS').filter(c => ifs.some(i => get(i).from === c || get(i).to === c));
       const n2 = comps.length ? `<div class="card" style="margin-bottom:16px"><h3>N² view</h3><div class="muted" style="margin-bottom:10px">Components on the diagonal. An interface sits in the row of its source and the column of its destination.</div>
         <div class="scroll"><table class="n2">${comps.map(r => `<tr>${comps.map(c => r === c
           ? `<th><button class="linkish dark" data-act="open" data-id="${esc(r)}"><span class="mono">${esc(r)}</span><br>${esc(get(r).title)}</button></th>`
           : `<td>${ifs.filter(i => get(i).from === r && get(i).to === c).map(refbtn).join('')}</td>`).join('')}</tr>`).join('')}</table></div></div>` : '';
-      return n2 + `<div class="tools">${search('interfaces')}</div>${listOf('IF', iss, ch)}${legend(['draft', 'agreed', 'baselined'])}`;
+      return n2 + `<div class="tools">${search('interfaces')}</div>${listOf('INT', iss, ch)}${legend(['draft', 'agreed', 'baselined'])}`;
     },
     VER(iss, ch) {
       const list = idsOf('VER'), sys = idsOf(leaf()).filter(id => get(id).status !== 'obsolete');
@@ -691,13 +735,22 @@
         <div class="tools">${search('verification cases')}</div>${listOf('VER', iss, ch)}${legend(['planned', 'blocked', 'passed', 'failed'])}`;
     },
     RSK(iss, ch) {
-      const live = idsOf('RSK').filter(id => get(id).status !== 'closed');
-      const cell = (l, i) => { const s = l * i; return `<td class="${s >= 12 ? 'hi' : s >= 6 ? 'mid' : 'lo'}">${live.filter(id => get(id).likelihood === l && get(id).impact === i).map(refbtn).join('')}</td>`; };
-      return `<div class="card" style="margin-bottom:16px"><h3>Likelihood × impact</h3><div class="muted" style="margin-bottom:10px">Active risks only. Closed risks stay in the register below.</div>
-          <div class="scroll"><table class="heat"><tr><th></th>${[1, 2, 3, 4, 5].map(i => `<th>Impact ${i}</th>`).join('')}</tr>
-          ${[5, 4, 3, 2, 1].map(l => `<tr><th>Likelihood ${l}</th>${[1, 2, 3, 4, 5].map(i => cell(l, i)).join('')}</tr>`).join('')}</table></div></div>
-        <div class="tools">${search('risks')}</div>
-        ${listOf('RSK', iss, ch, { sort: (a, b) => { const s = x => { const d = get(x) || S.base.get(x).data; return d.likelihood * d.impact; }; return s(b) - s(a); } })}${legend(['open', 'mitigating', 'accepted', 'closed'])}`;
+      const LL = S.project.likelihoodLabels, IL = S.project.impactLabels;
+      const data = id => get(id) || S.base.get(id).data, score = id => data(id).likelihood * data(id).impact;
+      const bar = sysBar('RSK', 'All systems: every risk');
+      const rows = scopedRows('RSK', id => match(id, data(id)), ch, (a, b) => score(b) - score(a) || a.localeCompare(b));
+      const scope = S.spec ? subtree(S.spec, S.specDepth).flatMap(e => homed(e.id, 'RSK')) : idsOf('RSK');
+      const live = scope.filter(id => get(id).status !== 'closed'), hot = live.filter(id => get(id).status === 'impacting');
+      const pin = id => `<button type="button" class="refbtn ${get(id).status === 'impacting' ? 'hot' : ''}" data-act="open" data-id="${esc(id)}" title="${esc(get(id).title)}${get(id).status === 'impacting' ? ' (impacting: now an issue)' : ''}">${esc(shortId(id))}</button>`;
+      const cell = (l, i) => { const s = l * i; return `<td class="${s >= 12 ? 'hi' : s >= 6 ? 'mid' : 'lo'}">${live.filter(id => get(id).likelihood === l && get(id).impact === i).map(pin).join('')}</td>`; };
+      return bar + `<div class="card" style="margin-bottom:16px"><h3>Risk map: ${S.spec ? esc(get(S.spec).title) + (String(S.specDepth) === '0' ? '' : ' and the levels shown below it') : 'all systems'}</h3>
+          <div class="muted" style="margin-bottom:10px">${plural(live.length, 'active risk')}${hot.length ? `, of which <b style="color:var(--red)">${hot.length} impacting</b> (now ${hot.length === 1 ? 'an issue' : 'issues'})` : ''}. Closed risks stay in the table below.</div>
+          <div class="scroll"><table class="heat"><tr><th></th>${[1, 2, 3, 4, 5].map(i => `<th>${i} · ${esc(IL[i - 1] || '')}</th>`).join('')}</tr>
+          ${[5, 4, 3, 2, 1].map(l => `<tr><th>${l} · ${esc(LL[l - 1] || '')}</th>${[1, 2, 3, 4, 5].map(i => cell(l, i)).join('')}</tr>`).join('')}
+          <tr><th></th><th colspan="5" class="axis">Impact →  ·  rows: likelihood</th></tr></table></div>
+          <div class="legend"><span><span class="refbtn hot" style="margin:0 6px 0 0">ID</span>impacting: the risk has happened and is now an issue</span></div></div>
+        <div class="tools">${search('risks: any attribute')}</div>
+        ${grid('rsk', rskCols(), rows, iss, ch, `risks${S.spec ? '-' + M.sysOf(S.spec) : ''}`)}${legend(['open', 'mitigating', 'accepted', 'impacting', 'closed'])}`;
     },
     DEC(iss, ch) { return `<div class="tools">${search('decisions')}</div>${listOf('DEC', iss, ch)}${legend(['proposed', 'accepted', 'superseded'])}`; }
   };
@@ -705,7 +758,7 @@
   /* ---------------- trace ---------------- */
   const traceCols = () => [...visLevels().map(l => ({ key: l.key, name: l.name })), ...(RANK[acc('verification')] >= 1 ? [{ key: 'VER', name: 'Verification' }] : [])];
   const upOf = id => (get(id)?.traces || get(id)?.verifies || []).filter(t => S.work.has(t) && canSee(t));
-  const downOf = id => [...childrenOf(id), ...(M.prefixOf(id) === leaf() ? linking('VER', 'verifies', id) : [])];
+  const downOf = id => [...childrenOf(id), ...(P(id) === leaf() ? linking('VER', 'verifies', id) : [])];
   function traceView(iss) {
     const cols = traceCols();
     if (!cols.length) return '<div class="card empty">Nothing in the trace chain is visible to you.</div>';
@@ -742,6 +795,37 @@
     const set = id ? chain(id) : null;
     $$('.tnode', box).forEach(n => { n.classList.toggle('hot', !!set && set.has(n.dataset.node)); n.classList.toggle('dim', !!set && !set.has(n.dataset.node)); });
     $$('path', box).forEach(p => { const on = !!set && set.has(p.dataset.from) && set.has(p.dataset.to); p.classList.toggle('hot', on); p.classList.toggle('dim', !!set && !on); });
+  }
+
+  /* ---------------- metrics ---------------- */
+  function metricsView() {
+    const lv = visLevels(), all = lv.flatMap(l => idsOf(l.key));
+    const real = all.filter(id => get(id).object === 'requirement' && get(id).status !== 'obsolete'), ass = all.filter(id => M.codeOf(id) === 'ASS');
+    const lower = real.filter(id => level(P(id)).parent), lf = real.filter(id => P(id) === leaf());
+    const seeVer = RANK[acc('verification')] >= 1, seeRsk = RANK[acc('risks')] >= 1;
+    const verified = ids => ids.filter(id => { const v = linking('VER', 'verifies', id); return v.length && v.every(x => get(x).result === 'passed'); }).length;
+    const risks = seeRsk ? idsOf('RSK').filter(id => get(id).status !== 'closed') : [];
+    const kpi = (num, lbl) => `<div class="card kpi"><div class="num">${esc(num)}</div><div class="lbl">${esc(lbl)}</div></div>`;
+    const order = pbsOrder();
+    return `<div class="grid kpis">
+        ${kpi(real.length, 'requirements')}${kpi(ass.length, 'assumptions')}
+        ${kpi(pct(lower.filter(id => (get(id).traces || []).length).length, lower.length), 'traced upward')}
+        ${seeVer ? kpi(pct(verified(lf), lf.length), `${leaf()} verified (all cases passed)`) : ''}
+        ${seeRsk ? kpi(risks.length, 'active risks') + kpi(risks.filter(id => get(id).status === 'impacting').length, 'impacting (issues)') : ''}
+      </div>
+      <div class="card" style="margin-bottom:16px"><h3>RAG status by requirement level</h3>
+        <div class="scroll"><table class="metrics"><tr><th>Level</th><th>Items</th><th>Stability</th><th>Compliance</th></tr>
+        ${lv.map(l => { const ids = idsOf(l.key); return `<tr><th><span class="mono">${esc(l.key)}</span> ${esc(l.name)}</th><td>${ids.length}</td><td>${ragBar(ids, 'stability')}</td><td>${ragBar(ids, 'compliance')}</td></tr>`; }).join('')}</table></div>
+        <div class="legend"><span><span class="dot t-green"></span>${esc(S.project.stabilities[0])} / ${esc(S.project.compliances[0])}</span><span><span class="dot t-amber"></span>${esc(S.project.stabilities[1])} / ${esc(S.project.compliances[1])}</span><span><span class="dot t-red"></span>${esc(S.project.stabilities[2])} / ${esc(S.project.compliances[2])}</span><span><span class="dot" style="background:var(--light)"></span>not set</span></div></div>
+      ${order.length ? `<div class="card"><h3>RAG status by system</h3><div class="muted" style="margin-bottom:10px">Each row counts the system and everything below it in the breakdown, so the top row is the whole project. Click a system to open its requirements.</div>
+        <div class="scroll"><table class="metrics"><tr><th>System</th><th>${esc(leaf())}</th><th>Assumptions</th><th>Stability</th><th>Compliance</th>${seeVer ? '<th>Verified</th>' : ''}${seeRsk ? '<th>Active risks</th><th>Issues</th>' : ''}</tr>
+        ${order.map(e => {
+          const items = [...rolled(e.id)], reqs = items.filter(id => get(id).object === 'requirement' && get(id).status !== 'obsolete');
+          const rk = seeRsk ? [...rolled(e.id, 'RSK')].filter(id => get(id).status !== 'closed') : [], hot = rk.filter(id => get(id).status === 'impacting').length;
+          return `<tr><th style="padding-left:${8 + e.depth * 16}px"><button class="linkish dark" data-act="spec" data-id="${esc(e.id)}"><span class="mono">${esc(M.sysOf(e.id))}</span> ${esc(get(e.id).title)}</button></th>
+            <td>${reqs.length}</td><td>${items.filter(id => M.codeOf(id) === 'ASS').length}</td><td>${ragBar(items, 'stability')}</td><td>${ragBar(reqs, 'compliance')}</td>
+            ${seeVer ? `<td>${reqs.length ? `${verified(reqs)}/${reqs.length}` : '–'}</td>` : ''}${seeRsk ? `<td>${rk.length}</td><td>${hot ? `<span class="rag t-red">${hot}</span>` : '0'}</td>` : ''}</tr>`;
+        }).join('')}</table></div></div>` : ''}`;
   }
 
   /* ---------------- validation / team / changes ---------------- */
@@ -811,10 +895,8 @@
     const v = d[f.k], name = esc(f.k), lbl = `<span>${esc(f.label)}</span>`;
     if (f.type === 'text') return `<label class="field"><span>${esc(f.label)}</span><input name="${name}" ${f.req ? 'required' : ''} value="${esc(v)}" ${dis}></label>`;
     if (f.type === 'area') return `<label class="field">${lbl}<textarea name="${name}" ${f.req ? 'required' : ''} ${dis}>${esc(v)}</textarea></label>`;
-    if (f.type === 'select' || f.type === 'num') {
-      const opts = f.type === 'num' ? [1, 2, 3, 4, 5] : f.opts;
-      return `<label class="field half">${lbl}<select name="${name}" ${dis}>${f.req ? '' : '<option value="">–</option>'}${opts.map(o => `<option ${String(o) === String(v) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></label>`;
-    }
+    if (f.type === 'num') return `<label class="field half">${lbl}<select name="${name}" ${dis}>${[1, 2, 3, 4, 5].map(o => `<option value="${o}" ${o === v ? 'selected' : ''}>${o}${f.labels ? ' · ' + esc(f.labels[o - 1] || '') : ''}</option>`).join('')}</select></label>`;
+    if (f.type === 'select') return `<label class="field half">${lbl}<select name="${name}" ${dis}>${f.req ? '' : '<option value="">–</option>'}${f.opts.map(o => `<option ${String(o) === String(v) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></label>`;
     const cands = f.to.flatMap(idsOf);
     if (f.type === 'link') {
       const extra = v && !cands.includes(v) ? `<option value="${esc(v)}" selected>${S.work.has(v) ? 'restricted' : esc(v) + ' (missing)'}</option>` : '';
@@ -835,7 +917,14 @@
     const gone = !isNew && !S.work.has(id);
     const d = isNew ? S.sel.data : (get(id) || S.base.get(id).data);
     const b = S.base.get(id), t = T(id);
-    const typeName = t === 'REQ' ? `${level(M.prefixOf(id)).name} requirement` : M.TYPES[t]?.name || 'Item';
+    const code = M.codeOf(id);
+    const typeName = code === 'ASS' ? 'Assumption' : t === 'REQ' ? `${level(P(id)).name} requirement` : M.TYPES[t]?.name || 'Item';
+    const allPbs = [...S.work.keys()].filter(x => M.codeOf(x) === 'PBS').sort();
+    const sysPick = !isNew ? `<div class="help">System: ${elOf(id) && id !== elOf(id) ? refbtn(elOf(id)) : ''} <b>${esc(code === 'INT' ? M.sysOf(id).replace('LVL', 'breakdown level ') : sysLabel(id))}</b></div>`
+      : code === 'PBS' ? `<label class="field"><span>System code (becomes part of every ID for this system; cannot be changed later)</span><input name="_code" required placeholder="e.g. BUOY" maxlength="8" spellcheck="false" style="text-transform:uppercase"></label>`
+      : code === 'INT' ? `<div class="help">The ID will carry the breakdown level at which the two systems meet.</div>`
+      : `<label class="field"><span>System (part of the ID; cannot be changed later)</span><select name="_sys" required>${allPbs.filter(x => code !== 'RSK' || get(x).status === 'approved').map(x => `<option value="${esc(M.sysOf(x))}" ${x === S.spec ? 'selected' : ''}>${esc(M.sysOf(x))}${canSee(x) ? ' · ' + esc(get(x).title) : ''}</option>`).join('')}</select></label>
+        ${code === 'RSK' ? '<div class="help">Only approved systems are listed. Raise a risk at the lowest system it applies to; if it spans several sub-systems, raise it once against their parent.</div>' : ''}`;
     const edit = canEdit(id) && !gone;
     const dis = edit ? '' : 'disabled';
     const changed = isNew || changes().some(c => c.id === id);
@@ -843,12 +932,13 @@
     const back = isNew || gone ? [] : backlinks(id);
     el.innerHTML = `<div class="scrim" data-act="close"></div>
       <form class="drawer" data-submit="stage" role="dialog" aria-label="${esc(typeName)} ${esc(id)}">
-        <div class="drawer-head"><h2>${esc(id)}</h2><span class="eyebrow">${esc(typeName)}</span>
+        <div class="drawer-head"><h2>${isNew ? 'New' : esc(id)}</h2><span class="eyebrow">${esc(typeName)}</span>
           ${isNew ? chip('add', 'new') : gone ? chip('del', 'deleted') : changed ? chip('mod', b ? 'edited' : 'new') : ''}
           <button type="button" class="x" data-act="close" aria-label="Close">×</button></div>
         <div class="drawer-body">
           ${!edit && canPush() && !gone ? `<div class="mini-issue">${esc(me()?.name || 'You')} can read this but not change it.</div>` : ''}
           ${mine.map(i => `<div class="mini-issue ${i.severity}">${esc(i.message)}</div>`).join('')}
+          ${sysPick}
           <div class="fields">${M.fields(id, S.project).map(f => fieldHtml(f, d, dis)).join('')}</div>
           ${!isNew ? `<div><div class="section-lbl" style="margin-bottom:6px">Referenced by</div>${back.map(refbtn).join('') || '<span class="muted" style="font-size:12.5px">Nothing links to this yet.</span>'}</div>` : ''}
           ${b ? `<div><div class="section-lbl" style="margin-bottom:2px">File history</div><div class="mono muted" style="font-size:10.5px;overflow-wrap:anywhere">${esc(b.path)}</div><div id="hist">${S.hist[b.path] ? commitList(S.hist[b.path]) : '<span class="muted" style="font-size:12px">Loading…</span>'}</div></div>` : ''}
@@ -885,8 +975,10 @@
       ls.set('se.grid', S.grid); render();
     },
     spec(t) {
-      if (RANK[acc('requirements/' + leaf())] < 1) { toast(`You do not have access to ${leaf()} requirements.`, true); return; }
-      S.view = 'app:REQ'; S.level = leaf(); S.spec = t.dataset.id; S.q = ''; S.f = {}; S.sel = null; renderDrawer(); render(); window.scrollTo(0, 0);
+      if (!t.dataset.stay && RANK[acc('requirements/' + leaf())] < 1) { toast(`You do not have access to ${leaf()} requirements.`, true); return; }
+      S.spec = t.dataset.id;
+      if (t.dataset.stay) { render(); return; }
+      S.view = 'app:REQ'; S.level = leaf(); S.q = ''; S.f = {}; S.sel = null; renderDrawer(); render(); window.scrollTo(0, 0);
     },
     zoom(t) { S.zoom = +t.dataset.z; render(); },
     csv() { exportCsv(); },
@@ -895,9 +987,10 @@
     close() { S.sel = null; renderDrawer(); $$('.req.sel').forEach(n => n.classList.remove('sel')); },
     persona(t) { setPersona(t.dataset.login); },
     new(t) {
-      const id = nextId(t.dataset.prefix), data = {};
+      const code = t.dataset.prefix, id = code + '-000', data = {};
       M.fields(id, S.project).forEach(f => { data[f.k] = f.type === 'links' ? [] : f.type === 'num' ? 3 : f.type === 'select' && f.req ? f.opts[0] : ''; });
-      S.sel = { id, isNew: true, data }; renderDrawer();
+      if (code === 'ASS') data.stability = M.fields(id, S.project).find(f => f.k === 'stability').opts[0];
+      S.sel = { id, isNew: true, code, data }; renderDrawer();
     },
     unstage(t) {
       const id = t.dataset.id, b = S.base.get(id);
@@ -924,10 +1017,22 @@
       run(connect(f.repo.value, f.root.value, new URLSearchParams(location.search).get('branch') || (cfg.repo === f.repo.value.trim() ? cfg.branch : '')));
     },
     stage(f) {
-      const { id, isNew } = S.sel;
+      const { isNew, code } = S.sel, fake = S.sel.id;
+      let id = fake;
+      if (isNew) {   // the real ID is coined now, from the chosen system
+        let sys;
+        if (code === 'PBS') {
+          sys = f._code.value.trim().toUpperCase();
+          if (!/^[A-Z][A-Z0-9]{1,7}$/.test(sys) || /^LVL\d+$/.test(sys)) { toast('System code: 2 to 8 letters or digits, starting with a letter.', true); return; }
+          if ([...S.work.keys(), ...S.base.keys()].some(x => M.codeOf(x) === 'PBS' && M.sysOf(x) === sys)) { toast(`System code ${sys} is already in use.`, true); return; }
+        } else if (code === 'INT') sys = 'LVL' + intLevel(f.from.value, f.to.value);
+        else sys = f._sys.value;
+        if (!sys) { toast('Choose the system this belongs to.', true); return; }
+        id = M.makeId(S.project, sys, code, nextNum(code));
+      }
       const data = isNew ? {} : clone(get(id));
       data.id = id;
-      M.fields(id, S.project).forEach(fd => {
+      M.fields(fake, S.project).forEach(fd => {
         if (fd.type === 'links') data[fd.k] = $$(`input[name="${fd.k}"]`, f).filter(i => i.type === 'hidden' || i.checked).map(i => i.value);
         else if (f[fd.k]) data[fd.k] = fd.type === 'num' ? Number(f[fd.k].value) : f[fd.k].value.trim();
       });

@@ -17,11 +17,11 @@ The landing page is a hub of small apps, each a view over one folder of the mode
 
 | App | Folder | Shows |
 | --- | --- | --- |
-| Requirements | `model/requirements/<LEVEL>/` | STK -> USER -> SYS with upward traces |
-| Architecture | `model/components/` | Product breakdown and requirement allocation |
+| Requirements | `model/requirements/<LEVEL>/` | STK -> USR -> REQ with upward traces, plus assumptions |
+| Architecture | `model/components/` | Product breakdown (PBS) with zoom levels |
 | Interfaces | `model/interfaces/` | Interface register and N2 matrix |
 | Verification | `model/verification/` | Cases, results and requirement coverage |
-| Risks | `model/risks/` | Register and likelihood x impact matrix |
+| Risks | `model/risks/` | One risk page per system: map, search, table; issues lit up |
 | Decisions | `model/decisions/` | Decision log and affected items |
 
 Trace, Validation, Changes and History cut across all of them.
@@ -30,10 +30,9 @@ Requirements and Architecture are spreadsheet-style tables: choose columns, sort
 filter, then **Export CSV** (every attribute of the rows shown) or **Print / PDF**
 (the table as shown, landscape, stamped with repository and commit).
 
-System requirements can be read as a specification tree. Pick a system from the
-product breakdown (click it in Architecture, or use the Specification selector in
-Requirements) to see the requirements allocated to it, grouped with the levels below
-it (n, n+1, n+2 or all).
+Requirements and risks are organised by system. Pick a system (click it in
+Architecture, or use the System selector) to see what belongs to it, grouped with the
+levels below it (n, n+1, n+2 or all).
 
 | Path | Purpose |
 | --- | --- |
@@ -94,28 +93,50 @@ in the URL preselects a repository; on GitHub Pages the repository is inferred f
 - **Validate:** required fields, allowed values, ID/file agreement, dangling or
   wrong-level traces (errors); orphans, uncovered parents, missing verification (warnings).
 
-## Requirement file
+## ID coding and files
+
+Every item ID is `<PROJECT>-<SYSTEM>-<TYPE>-<NNNN>`, for example `HS-BUOY-REQ-0006`:
+
+- `SYSTEM` is the code of the PBS element the item belongs to. Each item has exactly one
+  home system, fixed when it is created. Interfaces carry `LVL<x>` instead: the breakdown
+  level at which their two systems meet.
+- `TYPE` is `PBS`, a requirement level (`STK`, `USR`, `REQ`), `ASS` (assumption), `INT`,
+  `VER`, `RSK` or `DEC`.
 
 ```json
 {
-  "id": "SYS-004",
+  "id": "HS-HSS-REQ-0004",
+  "object": "requirement",
+  "type": "performance",
   "title": "Alert latency",
   "text": "The system shall raise an alert within 2 minutes of a reading falling outside its permitted range.",
+  "stability": "stable",
   "status": "approved",
   "priority": "must",
+  "compliance": "non-compliant",
+  "complianceRationale": "Worst case 3 min 10 s with 40 buoys reporting.",
   "verification": "test",
-  "traces": ["USER-003"]
+  "traces": ["HS-HSS-USR-0003"]
 }
 ```
 
-`traces` points upward to the parent level. Unknown fields are preserved.
+Rules the validator enforces beyond field types and links:
+
+- An assumption (`ASS`) can never have stability `stable`.
+- A risk can only be raised against a PBS system whose control status is `approved`.
+- The system code in every ID must exist in the product breakdown.
+
+Stability (stable / developing / unstable) and compliance (compliant / compliance risk /
+non-compliant) are shown red-amber-green; the Metrics page rolls them up by requirement
+level and by system. Likelihood and impact labels live in `model/project.json` and are
+placeholders until the SEMP defines them.
 
 ## Known limits of the PoC
 
 - Sign-in is a pasted token. A static page cannot complete GitHub's OAuth flow on its
   own (the token exchange needs a secret and is not CORS-enabled); a GitHub App plus a
   very small token-exchange endpoint is the next step.
-- New IDs are allocated per branch, so two branches can both create `SYS-011`. The
+- New IDs are allocated per branch, so two branches can both coin the same number. The
   merge will conflict on the file, which is visible but not friendly.
 - GitHub only. GitLab/Gitea need a second API adapter (`gh()` and the six calls around it).
 - Team access is simulated in the browser, not enforced by GitHub.

@@ -327,3 +327,21 @@ table.sheet{border-collapse:separate;border-spacing:0;font-size:12px;width:100%}
   .card{break-inside:avoid;border-color:#bbb}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+/* ---------- RAG, metrics, issues (v4) ---------- */
+.rag{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:600;color:#fff;white-space:nowrap}
+.rag.t-green{background:#3f9a6d}.rag.t-amber{background:#c98a14}.rag.t-red{background:var(--red)}.rag.t-grey{background:var(--grey)}
+.ragbar{display:flex;height:20px;border-radius:5px;overflow:hidden;min-width:150px;background:var(--light)}
+.ragbar i{display:grid;place-items:center;font-style:normal;font-size:10.5px;font-weight:600;color:#fff;min-width:18px}
+.ragbar i.t-green{background:#3f9a6d}.ragbar i.t-amber{background:#c98a14}.ragbar i.t-grey{background:#cfc7b4;color:var(--muted)}
+table.metrics{width:100%;font-size:12.5px}
+.metrics th,.metrics td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.metrics tr:first-child th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.metrics th{font-weight:500;white-space:nowrap}
+.metrics .linkish{font-size:12.5px;text-decoration:none}
+.refbtn.hot{background:var(--red);color:#fff;border-color:var(--red);box-shadow:0 0 0 3px rgba(181,72,72,.28)}
+.heat th.axis{font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:center;padding-top:8px}
+.pbs.c-proposed{border-style:dashed}
+.pbs.c-proposed .pbs-head{border-style:dashed}
+@media print{.ragbar{min-width:60px}}
+.btn.amber{color:#fff}

@@ -3,6 +3,8 @@
   "title": "Buoy controller",
   "description": "Embedded firmware: sampling schedule, local storage, health monitoring.",
   "kind": "software",
+  "owner": "Kenji Watanabe",
+  "company": "Tidewater Systems",
   "parent": "CMP-002",
   "allocated": [
     "SYS-001",

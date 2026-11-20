@@ -3,5 +3,7 @@
   "title": "Operator dashboard",
   "description": "Web application for live readings, trends and configuration.",
   "kind": "software",
+  "owner": "Luca Bianchi",
+  "company": "Tidewater Systems",
   "parent": "CMP-008"
 }

@@ -3,6 +3,8 @@
   "title": "Navigation aids",
   "description": "Marker light and AIS transponder.",
   "kind": "hardware",
+  "owner": "Ingrid Solberg",
+  "company": "Tidewater Systems",
   "parent": "CMP-002",
   "allocated": [
     "SYS-008",

@@ -3,5 +3,11 @@
   "title": "Buoy",
   "description": "Moored unit deployed in the harbour.",
   "kind": "subsystem",
-  "parent": "CMP-001"
+  "owner": "Ingrid Solberg",
+  "company": "Tidewater Systems",
+  "parent": "CMP-001",
+  "allocated": [
+    "SYS-006",
+    "SYS-009"
+  ]
 }

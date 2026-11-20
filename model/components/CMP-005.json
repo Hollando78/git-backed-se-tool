@@ -3,6 +3,8 @@
   "title": "Power system",
   "description": "Solar panels, charge controller and battery pack.",
   "kind": "hardware",
+  "owner": "Ingrid Solberg",
+  "company": "Tidewater Systems",
   "parent": "CMP-002",
   "allocated": [
     "SYS-006"

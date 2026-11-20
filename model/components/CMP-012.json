@@ -3,5 +3,6 @@
   "title": "Cellular network",
   "description": "Public LTE-M network operated by a third party.",
   "kind": "external",
+  "company": "Nordlink Mobile",
   "parent": "CMP-001"
 }

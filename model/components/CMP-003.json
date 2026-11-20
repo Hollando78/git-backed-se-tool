@@ -3,6 +3,8 @@
   "title": "Sensor suite",
   "description": "pH, dissolved oxygen, turbidity and temperature probes with anti-fouling wiper.",
   "kind": "hardware",
+  "owner": "Mei Lin",
+  "company": "Aquasense Instruments",
   "parent": "CMP-002",
   "allocated": [
     "SYS-001"

@@ -3,5 +3,11 @@
   "title": "Shore platform",
   "description": "Cloud-hosted services used by the Harbour Authority.",
   "kind": "subsystem",
-  "parent": "CMP-001"
+  "owner": "Priya Nair",
+  "company": "Tidewater Systems",
+  "parent": "CMP-001",
+  "allocated": [
+    "SYS-003",
+    "SYS-004"
+  ]
 }

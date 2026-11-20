@@ -1,9 +1,13 @@
 {
   "id": "STK-001",
+  "object": "requirement",
+  "type": "functional",
   "title": "Continuous water-quality awareness",
   "text": "The Harbour Authority shall have continuous awareness of water quality across the inner harbour.",
   "rationale": "Manual sampling happens weekly and misses short-lived events.",
   "source": "Harbour Authority",
+  "stability": "stable",
   "status": "approved",
-  "priority": "must"
+  "priority": "must",
+  "compliance": "not assessed"
 }

@@ -1,9 +1,14 @@
 {
   "id": "SYS-009",
+  "object": "requirement",
+  "type": "functional",
   "title": "Outage buffering",
   "text": "The buoy shall store at least 7 days of readings locally and forward them when the link is restored.",
+  "source": "System requirements review",
+  "stability": "stable",
   "status": "review",
   "priority": "should",
+  "compliance": "not assessed",
   "verification": "test",
   "traces": [
     "USER-001",

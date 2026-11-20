@@ -1,10 +1,15 @@
 {
   "id": "USER-002",
+  "object": "requirement",
+  "type": "functional",
   "title": "Review historical trends",
   "text": "An analyst shall be able to review readings from any buoy over a chosen date range.",
   "rationale": "Seasonal baselines are needed to judge whether a reading is abnormal.",
+  "source": "Analyst interviews",
+  "stability": "stable",
   "status": "approved",
   "priority": "should",
+  "compliance": "not assessed",
   "traces": [
     "STK-001"
   ]

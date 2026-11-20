@@ -1,9 +1,15 @@
 {
   "id": "SYS-002",
+  "object": "requirement",
+  "type": "performance",
   "title": "Reading latency",
   "text": "The system shall make each reading available to shore users within 60 seconds of sampling.",
+  "source": "System requirements review",
+  "stability": "stable",
   "status": "approved",
   "priority": "must",
+  "compliance": "compliant",
+  "complianceEvidence": "VER-002: 95th percentile latency 41 s.",
   "verification": "test",
   "traces": [
     "USER-001"

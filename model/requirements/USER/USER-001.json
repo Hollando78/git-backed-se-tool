@@ -1,9 +1,14 @@
 {
   "id": "USER-001",
+  "object": "requirement",
+  "type": "functional",
   "title": "View live readings",
   "text": "A duty officer shall be able to view the latest reading from every buoy on a single screen.",
+  "source": "Duty officer workshop, session 2",
+  "stability": "stable",
   "status": "approved",
   "priority": "must",
+  "compliance": "not assessed",
   "traces": [
     "STK-001"
   ]

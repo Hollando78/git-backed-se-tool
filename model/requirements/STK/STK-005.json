@@ -1,9 +1,14 @@
 {
   "id": "STK-005",
+  "object": "requirement",
+  "type": "functional",
   "title": "Public data transparency",
   "text": "The city council shall be able to share harbour water-quality data with the public.",
   "rationale": "Raised at the March consultation; scope not yet agreed.",
   "source": "City council",
+  "stability": "volatile",
+  "stabilityRationale": "Scope has not been agreed with the city council.",
   "status": "draft",
-  "priority": "could"
+  "priority": "could",
+  "compliance": "not assessed"
 }

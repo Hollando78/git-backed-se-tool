@@ -1,9 +1,14 @@
 {
   "id": "USER-007",
+  "object": "requirement",
+  "type": "safety",
   "title": "Visible to vessels",
   "text": "A vessel master shall be able to see and identify each buoy by day and by night.",
+  "source": "Harbour master consultation",
+  "stability": "stable",
   "status": "approved",
   "priority": "must",
+  "compliance": "not assessed",
   "traces": [
     "STK-004"
   ]

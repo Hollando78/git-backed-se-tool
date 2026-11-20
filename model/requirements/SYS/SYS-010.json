@@ -1,10 +1,16 @@
 {
   "id": "SYS-010",
+  "object": "requirement",
+  "type": "interface",
   "title": "AIS aid-to-navigation broadcast",
   "text": "The buoy shall broadcast its position as an AIS aid-to-navigation message.",
   "rationale": "Proposed by the harbour master; cost impact under assessment.",
+  "source": "Harbour master consultation",
+  "stability": "volatile",
+  "stabilityRationale": "Depends on DEC-004, which is not yet decided.",
   "status": "draft",
   "priority": "could",
+  "compliance": "not assessed",
   "traces": [
     "USER-007"
   ]

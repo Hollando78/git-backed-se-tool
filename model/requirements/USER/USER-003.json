@@ -1,9 +1,14 @@
 {
   "id": "USER-003",
+  "object": "requirement",
+  "type": "functional",
   "title": "Receive threshold alerts",
   "text": "A duty officer shall be alerted when any monitored parameter leaves its permitted range.",
+  "source": "Duty officer workshop, session 2",
+  "stability": "stable",
   "status": "approved",
   "priority": "must",
+  "compliance": "not assessed",
   "traces": [
     "STK-002"
   ]

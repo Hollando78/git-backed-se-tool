@@ -1,9 +1,15 @@
 {
   "id": "SYS-005",
+  "object": "requirement",
+  "type": "functional",
   "title": "Remote threshold configuration",
   "text": "The system shall allow the permitted range of each parameter to be changed remotely per buoy.",
+  "source": "Regulator guidance note 7",
+  "stability": "likely to change",
+  "stabilityRationale": "Regulator guidance on thresholds is being revised.",
   "status": "approved",
   "priority": "should",
+  "compliance": "not assessed",
   "verification": "demonstration",
   "traces": [
     "USER-004"

@@ -1,9 +1,16 @@
 {
   "id": "SYS-004",
+  "object": "requirement",
+  "type": "performance",
   "title": "Alert latency",
   "text": "The system shall raise an alert within 2 minutes of a reading falling outside its permitted range.",
+  "source": "System requirements review",
+  "stability": "stable",
   "status": "approved",
   "priority": "must",
+  "compliance": "non-compliant",
+  "complianceRationale": "Worst case 3 min 10 s with 40 buoys reporting. Tracked as RSK-005.",
+  "complianceEvidence": "VER-004 test report.",
   "verification": "test",
   "traces": [
     "USER-003"

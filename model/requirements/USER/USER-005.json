@@ -1,9 +1,14 @@
 {
   "id": "USER-005",
+  "object": "requirement",
+  "type": "performance",
   "title": "Unattended operation",
   "text": "A buoy shall operate for a full season without a maintenance visit.",
+  "source": "Duty officer workshop, session 2",
+  "stability": "stable",
   "status": "approved",
   "priority": "must",
+  "compliance": "not assessed",
   "traces": [
     "STK-003"
   ]

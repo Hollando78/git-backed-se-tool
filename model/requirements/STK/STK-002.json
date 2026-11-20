@@ -1,9 +1,13 @@
 {
   "id": "STK-002",
+  "object": "requirement",
+  "type": "functional",
   "title": "Early pollution warning",
   "text": "The environmental regulator shall be warned of pollution events early enough to direct a response.",
   "rationale": "Response effectiveness drops sharply after the first hour of a spill.",
   "source": "Environmental regulator",
+  "stability": "stable",
   "status": "approved",
-  "priority": "must"
+  "priority": "must",
+  "compliance": "not assessed"
 }

@@ -1,10 +1,16 @@
 {
   "id": "SYS-003",
+  "object": "requirement",
+  "type": "functional",
   "title": "Data retention",
   "text": "The system shall retain all readings for at least 24 months.",
   "rationale": "Two full seasonal cycles for baseline comparison.",
+  "source": "System requirements review",
+  "stability": "likely to change",
+  "stabilityRationale": "Retention period is under legal review.",
   "status": "approved",
   "priority": "should",
+  "compliance": "not assessed",
   "verification": "inspection",
   "traces": [
     "USER-002"

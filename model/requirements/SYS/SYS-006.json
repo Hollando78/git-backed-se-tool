@@ -1,10 +1,16 @@
 {
   "id": "SYS-006",
+  "object": "requirement",
+  "type": "performance",
   "title": "Energy autonomy",
   "text": "The buoy shall operate for at least 90 days with average solar irradiance of 1.0 kWh/m2/day.",
   "rationale": "Worst-case winter irradiance at the harbour latitude.",
+  "source": "System requirements review",
+  "stability": "stable",
   "status": "approved",
   "priority": "must",
+  "compliance": "compliant",
+  "complianceEvidence": "VER-006: minimum state of charge 31% over 90 days.",
   "verification": "analysis",
   "traces": [
     "USER-005"

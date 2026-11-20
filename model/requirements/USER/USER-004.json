@@ -1,10 +1,15 @@
 {
   "id": "USER-004",
+  "object": "requirement",
+  "type": "functional",
   "title": "Configure alert thresholds",
   "text": "An analyst shall be able to set the permitted range for each parameter without a site visit.",
   "rationale": "Permitted ranges change with season and with regulator guidance.",
+  "source": "Analyst interviews",
+  "stability": "stable",
   "status": "approved",
   "priority": "should",
+  "compliance": "not assessed",
   "traces": [
     "STK-002"
   ]

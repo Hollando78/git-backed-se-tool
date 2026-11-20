@@ -1,9 +1,14 @@
 {
   "id": "SYS-007",
+  "object": "requirement",
+  "type": "functional",
   "title": "Health telemetry",
   "text": "The buoy shall report battery state, link quality and sensor status at least once per hour.",
+  "source": "System requirements review",
+  "stability": "stable",
   "status": "review",
   "priority": "should",
+  "compliance": "not assessed",
   "verification": "test",
   "traces": [
     "USER-006"

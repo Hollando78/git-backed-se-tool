@@ -1,10 +1,16 @@
 {
   "id": "SYS-008",
+  "object": "requirement",
+  "type": "safety",
   "title": "Navigation light",
   "text": "The buoy shall display a yellow flashing light with a nominal range of at least 2 nautical miles.",
   "rationale": "IALA special mark characteristics.",
+  "source": "IALA R1001 maritime buoyage system",
+  "stability": "stable",
   "status": "approved",
   "priority": "must",
+  "compliance": "partially compliant",
+  "complianceRationale": "Light is specified to IALA characteristics; the range measurement is outstanding (VER-008 blocked).",
   "verification": "inspection",
   "traces": [
     "USER-007"

@@ -1,5 +1,7 @@
 {
   "name": "Harbour Sentinel",
+  "code": "HS",
+  "description": "Autonomous water-quality monitoring buoy fleet (sample model).",
   "levels": [
     {
       "key": "STK",
@@ -7,14 +9,14 @@
       "parent": null
     },
     {
-      "key": "USER",
+      "key": "USR",
       "name": "User",
       "parent": "STK"
     },
     {
-      "key": "SYS",
+      "key": "REQ",
       "name": "System",
-      "parent": "USER"
+      "parent": "USR"
     }
   ],
   "statuses": [
@@ -34,11 +36,9 @@
     "inspection",
     "demonstration"
   ],
-  "description": "Autonomous water-quality monitoring buoy fleet (sample model).",
   "objectTypes": [
     "requirement",
-    "information",
-    "heading"
+    "information"
   ],
   "reqTypes": [
     "functional",
@@ -50,13 +50,27 @@
   ],
   "stabilities": [
     "stable",
-    "likely to change",
-    "volatile"
+    "developing",
+    "unstable"
   ],
   "compliances": [
-    "not assessed",
     "compliant",
-    "partially compliant",
+    "compliance risk",
     "non-compliant"
-  ]
+  ],
+  "likelihoodLabels": [
+    "Rare",
+    "Unlikely",
+    "Possible",
+    "Likely",
+    "Almost certain"
+  ],
+  "impactLabels": [
+    "Negligible",
+    "Minor",
+    "Moderate",
+    "Major",
+    "Severe"
+  ],
+  "note": "Likelihood and impact labels are placeholders until the SEMP defines them."
 }

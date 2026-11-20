@@ -1,0 +1,11 @@
+{
+  "id": "VER-006",
+  "title": "Energy budget analysis",
+  "method": "analysis",
+  "procedure": "Model consumption against 1.0 kWh/m2/day irradiance for 90 days; state of charge stays above 20%.",
+  "result": "passed",
+  "notes": "Minimum state of charge 31%.",
+  "verifies": [
+    "SYS-006"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "VER-004",
+  "title": "Alert latency test",
+  "method": "test",
+  "procedure": "Inject out-of-range readings under nominal fleet load; alert raised within 2 min in all runs.",
+  "result": "failed",
+  "notes": "Worst case 3 min 10 s with 40 buoys reporting. See RSK-005.",
+  "verifies": [
+    "SYS-004"
+  ]
+}

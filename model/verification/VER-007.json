@@ -1,0 +1,10 @@
+{
+  "id": "VER-007",
+  "title": "Health telemetry soak test",
+  "method": "test",
+  "procedure": "Run for 7 days; a health report is received in every clock hour.",
+  "result": "planned",
+  "verifies": [
+    "SYS-007"
+  ]
+}

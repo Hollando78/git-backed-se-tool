@@ -1,0 +1,10 @@
+{
+  "id": "VER-003",
+  "title": "Retention configuration inspection",
+  "method": "inspection",
+  "procedure": "Inspect storage lifecycle policy; no rule deletes readings younger than 24 months.",
+  "result": "planned",
+  "verifies": [
+    "SYS-003"
+  ]
+}

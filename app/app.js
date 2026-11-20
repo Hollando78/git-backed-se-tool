@@ -47,7 +47,8 @@
     if (!r.ok) {
       const j = await r.json().catch(() => ({}));
       let msg = j.message || r.statusText || 'Request failed';
-      if (r.status === 403 && r.headers.get('x-ratelimit-remaining') === '0') msg = 'GitHub rate limit reached. Sign in with a token for a higher limit.';
+      if (r.status === 403 && r.headers.get('x-ratelimit-remaining') === '0') msg = S.token ? 'GitHub rate limit reached. Wait a few minutes and reload.' : 'GitHub allows only 60 anonymous requests an hour and that is used up. Connect with a token (5,000 an hour), or try again in an hour.';
+      if ((r.status === 403 || r.status === 429) && r.headers.get('retry-after')) msg = 'GitHub is asking us to slow down. Wait a minute and reload.';
       if (r.status === 404 && !S.token) msg = 'Not found. Private repositories need a token.';
       const e = new Error(msg); e.status = r.status; throw e;
     }
@@ -58,13 +59,57 @@
   const webUrl = () => `https://github.com/${encodeURIComponent(S.owner)}/${encodeURIComponent(S.repo)}`;
   const canPush = () => !!(S.token && S.repoInfo && S.repoInfo.permissions && S.repoInfo.permissions.push);
 
+  /* Reading the model. One file per item means dozens of files, so avoid one API call each:
+     - with a token: a single GraphQL query returns every file's text;
+     - without one (public repo): the tree comes from the API and file bodies from
+       raw.githubusercontent.com, which does not count against the 60/hour anonymous API limit.
+     Either way the blobs API remains as a fallback, a few requests at a time. */
+  const cacheGet = sha => { try { return sessionStorage.getItem('se.blob:' + sha); } catch { return null; } };
+  const cachePut = (sha, text) => { try { sessionStorage.setItem('se.blob:' + sha, text); } catch { /* ignore */ } };
   async function blobText(sha) {
-    const key = 'se.blob:' + sha;   // content-addressed, so a cached copy is always valid
-    try { const c = sessionStorage.getItem(key); if (c != null) return c; } catch { /* ignore */ }
     const b = await gh(`${R()}/git/blobs/${sha}`);
-    const text = new TextDecoder().decode(Uint8Array.from(atob(b.content.replace(/\s/g, '')), c => c.charCodeAt(0)));
-    try { sessionStorage.setItem(key, text); } catch { /* ignore */ }
-    return text;
+    return new TextDecoder().decode(Uint8Array.from(atob(b.content.replace(/\s/g, '')), c => c.charCodeAt(0)));
+  }
+  async function pooled(items, n, fn) {
+    let i = 0;
+    await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) await fn(items[i++]); }));
+  }
+  async function readViaGraphQL(commit) {
+    const blob = 'name type oid object { ... on Blob { text isTruncated } ';
+    const query = `query($o:String!,$r:String!,$e:String!){ repository(owner:$o,name:$r){ object(expression:$e){ ... on Tree { entries { ${blob} ... on Tree { entries { ${blob} ... on Tree { entries { ${blob} } } } } } } } } } } }`;
+    const r = await gh('/graphql', { method: 'POST', body: { query, variables: { o: S.owner, r: S.repo, e: `${commit}:${S.root}` } } });
+    if (r.errors?.length) throw new Error(r.errors[0].message);
+    const out = [];
+    (function walk(entries, dir) {
+      for (const e of entries || []) {
+        if (e.type === 'tree') walk(e.object?.entries, dir + e.name + '/');
+        else if (e.type === 'blob' && e.name.endsWith('.json')) out.push({ rel: dir + e.name, sha: e.oid, text: e.object && !e.object.isTruncated ? e.object.text : null });
+      }
+    })(r.data?.repository?.object?.entries, '');
+    return out;
+  }
+  async function readViaTree(commit) {
+    const tree = await gh(`${R()}/git/trees/${commit}?recursive=1`);
+    const prefix = S.root + '/';
+    return tree.tree.filter(e => e.type === 'blob' && e.path.startsWith(prefix) && e.path.endsWith('.json'))
+      .map(e => ({ rel: e.path.slice(prefix.length), sha: e.sha, text: null }));
+  }
+  /* -> [{ rel, sha, text }] for every .json file under the model root at this commit */
+  async function readModel(commit) {
+    let files = null;
+    if (S.token) files = await readViaGraphQL(commit).catch(() => null);
+    if (!files) files = await readViaTree(commit);
+    files.forEach(f => { if (f.text == null) f.text = cacheGet(f.sha); else cachePut(f.sha, f.text); });
+    const raw = `https://raw.githubusercontent.com/${encodeURIComponent(S.owner)}/${encodeURIComponent(S.repo)}/${commit}/`;
+    await pooled(files.filter(f => f.text == null), 6, async f => {
+      if (!S.token) {
+        const r = await fetch(raw + encRef(`${S.root}/${f.rel}`)).catch(() => null);
+        if (r && r.ok) f.text = await r.text();
+      }
+      if (f.text == null) f.text = await blobText(f.sha);
+      cachePut(f.sha, f.text);
+    });
+    return files;
   }
 
   /* ---------------- session ---------------- */
@@ -104,31 +149,26 @@
     S.branch = branch; S.loading = 'Reading ' + branch + '…'; S.sel = null; render(); renderDrawer();
     const cfg = ls.get('se.cfg', {}); cfg.branch = branch; ls.set('se.cfg', cfg);
     const ref = await gh(`${R()}/git/ref/heads/${encRef(branch)}`);
-    const tree = await gh(`${R()}/git/trees/${ref.object.sha}?recursive=1`);
-    S.head = { sha: ref.object.sha, tree: tree.sha };
-    const prefix = S.root + '/';
-    const blobs = tree.tree.filter(e => e.type === 'blob' && e.path.startsWith(prefix) && e.path.endsWith('.json'));
-    const special = name => blobs.find(e => e.path === prefix + name);
-    const readJson = async (entry, label) => {
-      if (!entry) return {};
-      try { return JSON.parse(await blobText(entry.sha)); } catch { toast(label + ' is not valid JSON; using defaults.', true); return {}; }
-    };
-    S.project = M.project(await readJson(special('project.json'), 'project.json'));
-    const team = await readJson(special('team.json'), 'team.json');
-    S.team = { teams: team.teams || [], users: team.users || [], domain: team.domain || 'example.invalid' };
-    if (!S.team.users.some(u => u.login === S.persona)) S.persona = '';
-    const files = blobs.filter(e => M.isItemPath(e.path.slice(prefix.length), S.project));
-    const [raws, commits] = await Promise.all([
-      Promise.all(files.map(f => blobText(f.sha))),
+    S.head = { sha: ref.object.sha };
+    const [all, commits] = await Promise.all([
+      readModel(ref.object.sha),
       gh(`${R()}/commits?sha=${encodeURIComponent(branch)}&path=${encodeURIComponent(S.root)}&per_page=30`).catch(() => [])
     ]);
+    const readJson = name => {
+      const f = all.find(x => x.rel === name);
+      if (!f) return {};
+      try { return JSON.parse(f.text); } catch { toast(name + ' is not valid JSON; using defaults.', true); return {}; }
+    };
+    S.project = M.project(readJson('project.json'));
+    const team = readJson('team.json');
+    S.team = { teams: team.teams || [], users: team.users || [], domain: team.domain || 'example.invalid' };
+    if (!S.team.users.some(u => u.login === S.persona)) S.persona = '';
     S.commits = commits; S.hist = {};
     S.base = new Map(); S.bad = [];
-    files.forEach((f, i) => {
-      const rel = f.path.slice(prefix.length);
-      const entry = { path: f.path, rel, sha: f.sha, data: null };
-      try { entry.data = JSON.parse(raws[i]); } catch (e) { entry.parseError = e.message; }
-      if (entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data)) S.base.set(rel.replace(/^.*\//, '').replace(/\.json$/, ''), entry);
+    all.filter(f => M.isItemPath(f.rel, S.project)).forEach(f => {
+      const entry = { path: `${S.root}/${f.rel}`, rel: f.rel, sha: f.sha, data: null };
+      try { entry.data = JSON.parse(f.text); } catch (e) { entry.parseError = e.message; }
+      if (entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data)) S.base.set(f.rel.replace(/^.*\//, '').replace(/\.json$/, ''), entry);
       else S.bad.push(entry);
     });
     S.work = new Map([...S.base].map(([id, e]) => [id, clone(e.data)]));

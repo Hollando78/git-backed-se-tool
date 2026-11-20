@@ -1,0 +1,10 @@
+{
+  "id": "CMP-005",
+  "title": "Power system",
+  "description": "Solar panels, charge controller and battery pack.",
+  "kind": "hardware",
+  "parent": "CMP-002",
+  "allocated": [
+    "SYS-006"
+  ]
+}

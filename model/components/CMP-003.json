@@ -1,0 +1,10 @@
+{
+  "id": "CMP-003",
+  "title": "Sensor suite",
+  "description": "pH, dissolved oxygen, turbidity and temperature probes with anti-fouling wiper.",
+  "kind": "hardware",
+  "parent": "CMP-002",
+  "allocated": [
+    "SYS-001"
+  ]
+}

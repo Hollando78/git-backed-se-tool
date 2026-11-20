@@ -1,0 +1,12 @@
+{
+  "id": "CMP-004",
+  "title": "Buoy controller",
+  "description": "Embedded firmware: sampling schedule, local storage, health monitoring.",
+  "kind": "software",
+  "parent": "CMP-002",
+  "allocated": [
+    "SYS-001",
+    "SYS-007",
+    "SYS-009"
+  ]
+}

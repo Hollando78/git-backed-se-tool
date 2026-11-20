@@ -1,0 +1,7 @@
+{
+  "id": "CMP-011",
+  "title": "Operator dashboard",
+  "description": "Web application for live readings, trends and configuration.",
+  "kind": "software",
+  "parent": "CMP-008"
+}

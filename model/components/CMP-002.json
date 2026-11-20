@@ -1,0 +1,7 @@
+{
+  "id": "CMP-002",
+  "title": "Buoy",
+  "description": "Moored unit deployed in the harbour.",
+  "kind": "subsystem",
+  "parent": "CMP-001"
+}

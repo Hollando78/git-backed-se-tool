@@ -1,0 +1,11 @@
+{
+  "id": "CMP-009",
+  "title": "Ingest and storage service",
+  "description": "Receives readings, validates them and stores the time series.",
+  "kind": "software",
+  "parent": "CMP-008",
+  "allocated": [
+    "SYS-002",
+    "SYS-003"
+  ]
+}

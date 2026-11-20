@@ -1,0 +1,10 @@
+{
+  "id": "CMP-006",
+  "title": "Communications modem",
+  "description": "LTE-M modem and antenna.",
+  "kind": "hardware",
+  "parent": "CMP-002",
+  "allocated": [
+    "SYS-002"
+  ]
+}

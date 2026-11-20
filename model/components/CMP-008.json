@@ -1,0 +1,7 @@
+{
+  "id": "CMP-008",
+  "title": "Shore platform",
+  "description": "Cloud-hosted services used by the Harbour Authority.",
+  "kind": "subsystem",
+  "parent": "CMP-001"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "CMP-010",
+  "title": "Alerting service",
+  "description": "Evaluates readings against thresholds and notifies duty officers.",
+  "kind": "software",
+  "parent": "CMP-008",
+  "allocated": [
+    "SYS-004",
+    "SYS-005"
+  ]
+}

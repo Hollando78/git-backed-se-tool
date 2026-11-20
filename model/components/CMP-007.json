@@ -1,0 +1,11 @@
+{
+  "id": "CMP-007",
+  "title": "Navigation aids",
+  "description": "Marker light and AIS transponder.",
+  "kind": "hardware",
+  "parent": "CMP-002",
+  "allocated": [
+    "SYS-008",
+    "SYS-010"
+  ]
+}

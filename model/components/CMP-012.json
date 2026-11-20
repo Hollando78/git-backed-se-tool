@@ -1,0 +1,7 @@
+{
+  "id": "CMP-012",
+  "title": "Cellular network",
+  "description": "Public LTE-M network operated by a third party.",
+  "kind": "external",
+  "parent": "CMP-001"
+}

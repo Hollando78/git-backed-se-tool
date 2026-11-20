@@ -60,6 +60,16 @@ restricted to the one repository is enough:
 - Contents: read and write
 - Pull requests: read and write (only for the "open a pull request" option)
 
+To hand the tool to someone without hosting anything, build a single file and send it:
+
+```bash
+node tools/build-single.js owner/repo
+```
+
+`dist/strata.html` opens straight from disk and works against the repository live.
+It contains the app only, no model data and no credentials; each person connects with
+their own token, so GitHub decides what they can see and change.
+
 Public repositories can be browsed read-only with no token. `?repo=owner/name&branch=x`
 in the URL preselects a repository; on GitHub Pages the repository is inferred from the URL.
 

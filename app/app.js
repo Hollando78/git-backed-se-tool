@@ -125,6 +125,8 @@
   function guessRepo() {
     const p = new URLSearchParams(location.search);
     if (p.get('repo')) return p.get('repo');
+    const preset = document.querySelector('meta[name="se-repo"]')?.content;   // baked into the single-file build
+    if (preset) return preset;
     const m = location.hostname.match(/^([^.]+)\.github\.io$/);   // GitHub Pages: owner.github.io/repo/
     const seg = location.pathname.split('/').filter(Boolean)[0];
     return m && seg ? `${m[1]}/${seg}` : '';

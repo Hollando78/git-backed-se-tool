@@ -12,16 +12,22 @@
     ],
     statuses: ['draft', 'review', 'approved', 'obsolete'],
     priorities: ['must', 'should', 'could'],
-    verification: ['test', 'analysis', 'inspection', 'demonstration']
+    verification: ['test', 'analysis', 'inspection', 'demonstration'],
+    objectTypes: ['requirement', 'information', 'heading'],
+    reqTypes: ['functional', 'performance', 'interface', 'environmental', 'constraint', 'safety'],
+    stabilities: ['stable', 'likely to change', 'volatile'],
+    compliances: ['not assessed', 'compliant', 'partially compliant', 'non-compliant']
   };
 
   /* Item types other than requirements. `to` lists the ID prefixes a link may point at;
      LEAF / REQS are placeholders resolved against the project's requirement levels. */
   var TYPES = {
     CMP: { name: 'Component', plural: 'Components', dir: 'components', fields: [
-      { k: 'title', label: 'Name', type: 'text', req: true },
+      { k: 'title', label: 'System name', type: 'text', req: true },
       { k: 'description', label: 'Description', type: 'area' },
       { k: 'kind', label: 'Kind', type: 'select', req: true, opts: ['system', 'subsystem', 'hardware', 'software', 'external'] },
+      { k: 'owner', label: 'System owner', type: 'text' },
+      { k: 'company', label: 'Owner company', type: 'text' },
       { k: 'parent', label: 'Part of', type: 'link', to: ['CMP'] },
       { k: 'allocated', label: 'Allocated requirements', type: 'links', to: ['LEAF'] }
     ] },
@@ -98,14 +104,21 @@
     var defs;
     if (lvl) {
       defs = [
+        { k: 'object', label: 'Object type', type: 'select', req: true, opts: 'objectTypes' },
+        { k: 'type', label: 'Requirement type', type: 'select', opts: 'reqTypes' },
         { k: 'title', label: 'Title', type: 'text', req: true },
-        { k: 'text', label: 'Statement', type: 'area', req: true },
-        { k: 'rationale', label: 'Rationale', type: 'area' }
+        { k: 'text', label: 'Requirement', type: 'area', req: true },
+        { k: 'rationale', label: 'Requirement rationale', type: 'area' },
+        { k: 'source', label: 'Source', type: 'text' },
+        { k: 'stability', label: 'Stability', type: 'select', opts: 'stabilities' },
+        { k: 'stabilityRationale', label: 'Stability rationale', type: 'area' },
+        { k: 'status', label: 'Status', type: 'select', req: true, opts: 'statuses' },
+        { k: 'priority', label: 'Priority', type: 'select', req: true, opts: 'priorities' },
+        { k: 'compliance', label: 'Compliance status', type: 'select', opts: 'compliances' },
+        { k: 'complianceRationale', label: 'Compliance rationale', type: 'area' },
+        { k: 'complianceEvidence', label: 'Compliance evidence', type: 'area' },
+        { k: 'verification', label: 'Verification method', type: 'select', opts: 'verification' }
       ];
-      if (!lvl.parent) defs.push({ k: 'source', label: 'Source (stakeholder)', type: 'text' });
-      defs.push({ k: 'status', label: 'Status', type: 'select', req: true, opts: 'statuses' },
-                { k: 'priority', label: 'Priority', type: 'select', req: true, opts: 'priorities' },
-                { k: 'verification', label: 'Verification', type: 'select', opts: 'verification' });
       if (lvl.parent) defs.push({ k: 'traces', label: 'Traces to (' + lvl.parent + ')', type: 'links', to: [lvl.parent] });
     } else defs = TYPES[p] ? TYPES[p].fields : [];
     return defs.map(function (f) {
@@ -187,14 +200,18 @@
       var links = function (k) { return Array.isArray(d[k]) ? d[k].filter(function (t) { return byId[t]; }) : []; };
       if (type === 'REQ') {
         var lvl = levelDef(proj, prefixOf(id));
-        if (d.text && !/\bshall\b/i.test(d.text)) add('warn', id, 'shall', 'Statement has no "shall".');
-        if (lvl.key === leaf && !d.verification && d.status !== 'obsolete') add('warn', id, 'no-verification', 'No verification method set.');
+        var isReq = d.object === 'requirement';
+        if (isReq && d.text && !/\bshall\b/i.test(d.text)) add('warn', id, 'shall', 'Requirement has no "shall".');
+        if (isReq && lvl.key === leaf && !d.verification && d.status !== 'obsolete') add('warn', id, 'no-verification', 'No verification method set.');
+        if (d.compliance === 'compliant' && isEmpty(d.complianceEvidence)) add('warn', id, 'no-evidence', 'Marked compliant with no compliance evidence.');
+        if ((d.compliance === 'non-compliant' || d.compliance === 'partially compliant') && isEmpty(d.complianceRationale)) add('warn', id, 'no-comp-rationale', 'Not fully compliant, but no compliance rationale is given.');
+        if (d.stability === 'volatile' && isEmpty(d.stabilityRationale)) add('warn', id, 'no-stab-rationale', 'Marked volatile with no stability rationale.');
         if (!lvl.parent) { if (!isEmpty(d.traces)) add('error', id, 'trace-top', 'Top-level requirements cannot trace upward.'); return; }
         links('traces').forEach(function (t) {
           if (d.status !== 'obsolete') covered[t] = true;
           if (byId[t].data.status === 'obsolete' && d.status !== 'obsolete') add('warn', id, 'trace-obsolete', 'Traces to ' + t + ', which is obsolete.');
         });
-        if (isEmpty(d.traces) && d.status !== 'obsolete') add('warn', id, 'orphan', 'Does not trace to any ' + lvl.parent + ' requirement.');
+        if (isReq && isEmpty(d.traces) && d.status !== 'obsolete') add('warn', id, 'orphan', 'Does not trace to any ' + lvl.parent + ' requirement.');
       } else if (type === 'CMP') {
         anyCmp = true;
         if (d.parent === id) add('error', id, 'parent', 'A component cannot be part of itself.');
@@ -213,7 +230,7 @@
 
     entries.forEach(function (e) {
       var d = e.data, id = e._id;
-      if (!byId[id] || typeOf(id, proj) !== 'REQ' || d.status === 'obsolete') return;
+      if (!byId[id] || typeOf(id, proj) !== 'REQ' || d.status === 'obsolete' || d.object !== 'requirement') return;
       var key = prefixOf(id);
       if (hasChildLevel[key] && !covered[id]) add('warn', id, 'uncovered', 'No lower-level requirement traces to this.');
       if (key === leaf) {

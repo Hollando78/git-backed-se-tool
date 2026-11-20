@@ -26,6 +26,15 @@ The landing page is a hub of small apps, each a view over one folder of the mode
 
 Trace, Validation, Changes and History cut across all of them.
 
+Requirements and Architecture are spreadsheet-style tables: choose columns, sort,
+filter, then **Export CSV** (every attribute of the rows shown) or **Print / PDF**
+(the table as shown, landscape, stamped with repository and commit).
+
+System requirements can be read as a specification tree. Pick a system from the
+product breakdown (click it in Architecture, or use the Specification selector in
+Requirements) to see the requirements allocated to it, grouped with the levels below
+it (n, n+1, n+2 or all).
+
 | Path | Purpose |
 | --- | --- |
 | `index.html`, `app/` | The static app. No build step, no dependencies. |

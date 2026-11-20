@@ -35,7 +35,7 @@
     base: new Map(),   // id -> { path, rel, sha, data }  as committed at head
     bad: [],           // files that failed to parse
     work: new Map(),   // id -> data  (base + staged edits)
-    view: 'hub', level: '', q: '', statusF: '', sel: null, hist: {}, loading: '', error: '', committing: false
+    view: 'hub', level: '', q: '', f: {}, spec: '', specDepth: 'all', zoom: 1, grid: ls.get('se.grid', {}), colsOpen: false, lastGrid: null, sel: null, hist: {}, loading: '', error: '', committing: false
   };
 
   /* ---------------- GitHub ---------------- */
@@ -318,7 +318,7 @@
     setTimeout(() => d.remove(), err ? 9000 : 6000);
   }
   const chip = (cls, text) => `<span class="chip ${cls}">${esc(text)}</span>`;
-  const TONES = { grey: ['draft', 'planned', 'proposed', 'open'], amber: ['review', 'mitigating', 'agreed', 'blocked'], green: ['approved', 'passed', 'accepted', 'baselined', 'closed'], red: ['obsolete', 'failed', 'superseded'] };
+  const TONES = { grey: ['draft', 'planned', 'proposed', 'open', 'not assessed'], amber: ['review', 'mitigating', 'agreed', 'blocked', 'likely to change', 'partially compliant'], green: ['approved', 'passed', 'accepted', 'baselined', 'closed', 'stable', 'compliant'], red: ['obsolete', 'failed', 'superseded', 'volatile', 'non-compliant'] };
   const tone = s => Object.keys(TONES).find(t => TONES[t].includes(s)) || 'grey';
   const dot = s => `<span class="dot t-${tone(s)}"></span>`;
   const st = s => `<span>${dot(s)}${esc(s)}</span>`;
@@ -333,7 +333,7 @@
     return `<div class="bar">${Object.entries(counts).map(([v, n]) => `<i class="t-${tone(v)}" style="width:${100 * n / list.length}%" title="${esc(v)}: ${n}"></i>`).join('')}</div>`;
   };
   const legend = values => `<div class="legend">${values.map(v => st(v)).join('')}</div>`;
-  const match = (id, d) => { const q = S.q.trim().toLowerCase(); return !q || [id, d.title, d.text, d.description].join(' ').toLowerCase().includes(q); };
+  const match = (id, d) => { const q = S.q.trim().toLowerCase(); return !q || [id, ...Object.values(d)].join(' ').toLowerCase().includes(q); };
   const search = what => `<input id="q" type="search" placeholder="Search ${esc(what)}" value="${esc(S.q)}" aria-label="Search">`;
   const newBtn = (prefix, label) => canEditPrefix(prefix) ? `<button class="btn" data-act="new" data-prefix="${esc(prefix)}">+ New ${esc(label)}</button>` : '';
 
@@ -418,7 +418,8 @@
     if (S.view === 'history') return top('History', `Commits touching <span class="mono">${esc(S.root)}/</span> on <span class="mono">${esc(S.branch)}</span>.`) + `<div class="card">${commitList(S.commits) || '<div class="empty">No commits found.</div>'}</div>`;
     const a = APPS.find(x => x.key === app);
     const right = { REQ: () => newBtn(S.level, S.level), CMP: () => newBtn('CMP', 'component'), IF: () => newBtn('IF', 'interface'), VER: () => newBtn('VER', 'case'), RSK: () => newBtn('RSK', 'risk'), DEC: () => newBtn('DEC', 'decision') }[app]();
-    return top(a.name, esc(a.blurb), right) + ro + accNote + appViews[app](iss, ch);
+    const printHead = `<div class="print-head"><b>${esc(S.project.name)}</b> · ${esc(a.name)} · ${esc(S.owner)}/${esc(S.repo)} @ ${esc(S.head.sha.slice(0, 7))} (${esc(S.branch)}) · ${esc(when(new Date().toISOString()))}</div>`;
+    return printHead + top(a.name, esc(a.blurb), right) + ro + accNote + appViews[app](iss, ch);
   }
 
   /* ---------------- hub ---------------- */
@@ -518,29 +519,156 @@
     return `<div class="reqs">${list.map(id => row(id, iss, ch)).join('') || `<div class="empty">${S.q ? 'Nothing matches the search.' : 'Nothing here yet.'}</div>`}</div>`;
   }
 
+  /* ---------------- product breakdown helpers ---------------- */
+  const cmpKids = id => idsOf('CMP').filter(c => get(c).parent === id);
+  /* Depth-first list of visible components: [{ id, depth }] */
+  function pbsOrder() {
+    const all = idsOf('CMP'), seen = new Set(), out = [];
+    const walk = (id, depth) => { if (seen.has(id)) return; seen.add(id); out.push({ id, depth }); cmpKids(id).forEach(c => walk(c, depth + 1)); };
+    all.filter(id => !all.includes(get(id).parent)).forEach(r => walk(r, 0));
+    all.forEach(id => walk(id, 0));   // anything left is in a parent cycle
+    return out;
+  }
+  function subtree(id, depth) {
+    const seen = new Set(), out = [];
+    const walk = (x, d) => { if (seen.has(x) || (depth !== 'all' && d > +depth)) return; seen.add(x); out.push({ id: x, depth: d }); cmpKids(x).forEach(c => walk(c, d + 1)); };
+    walk(id, 0);
+    return out;
+  }
+  const rolled = id => new Set(subtree(id, 'all').flatMap(e => (get(e.id).allocated || []).filter(r => S.work.has(r) && canSee(r))));
+
+  /* ---------------- grid: spreadsheet-style table with column chooser, sort and export ---------------- */
+  function reqCols(lvl) {
+    const off = ['object', 'rationale', 'stabilityRationale', 'complianceRationale', 'complianceEvidence', 'priority'];
+    const wide = { title: 160, text: 320, rationale: 240, source: 150, stabilityRationale: 220, complianceRationale: 240, complianceEvidence: 220 };
+    const cols = [{ k: 'id', label: 'ID' }];
+    M.fields(lvl + '-000', S.project).forEach(f => cols.push({ k: f.k, label: f.k === 'traces' ? 'Traces to' : f.label, w: wide[f.k], off: off.includes(f.k),
+      dot: ['stability', 'compliance', 'status'].includes(f.k), get: (id, d) => f.type === 'links' ? refText(d[f.k] || []) : show(d[f.k]) }));
+    if (lvl === leaf()) {
+      if (RANK[acc('components')] >= 1) cols.push({ k: '_alloc', label: 'Allocated to', get: id => linking('CMP', 'allocated', id).join(', ') });
+      if (RANK[acc('verification')] >= 1) cols.push({ k: '_cases', label: 'Verified by', off: true, get: id => linking('VER', 'verifies', id).join(', ') });
+    }
+    return cols;
+  }
+  const cmpCols = () => [
+    { k: 'id', label: 'ID' },
+    { k: 'title', label: 'System name', w: 220, tree: true, get: (id, d) => d.title },
+    { k: 'kind', label: 'Kind', get: (id, d) => d.kind },
+    { k: 'owner', label: 'System owner', get: (id, d) => d.owner || '' },
+    { k: 'company', label: 'Owner company', get: (id, d) => d.company || '' },
+    { k: 'parent', label: 'Part of', get: (id, d) => d.parent || '' },
+    { k: '_own', label: 'Requirements', get: (id, d) => (d.allocated || []).length },
+    { k: '_all', label: 'Incl. levels below', get: id => S.work.has(id) ? rolled(id).size : '' },
+    { k: '_if', label: 'Interfaces', get: id => idsOf('IF').filter(i => get(i).from === id || get(i).to === id).length },
+    { k: 'description', label: 'Description', w: 280, off: true, get: (id, d) => d.description || '' }
+  ];
+  const colHidden = (key, c) => { const h = S.grid[key]?.hidden; return c.k !== 'id' && (h ? h.includes(c.k) : !!c.off); };
+  const cellOf = (c, id, d) => c.k === 'id' ? id : c.get(id, d);
+  function grid(key, cols, rows, iss, ch, name) {
+    const g = S.grid[key] || {}, vis = cols.filter(c => !colHidden(key, c));
+    const data = id => get(id) || S.base.get(id).data;
+    const grouped = rows.some(r => r.group);
+    if (g.sort && !grouped) {
+      const c = cols.find(x => x.k === g.sort.k);
+      if (c) rows = rows.slice().sort((a, b) => g.sort.dir * String(cellOf(c, a.id, data(a.id))).localeCompare(String(cellOf(c, b.id, data(b.id))), undefined, { numeric: true }));
+    }
+    S.lastGrid = { cols, rows, name };
+    const items = rows.filter(r => !r.group);
+    const body = rows.map(r => {
+      if (r.group) { const e = get(r.el); return `<tr class="grp"><td colspan="${vis.length}"><span style="padding-left:${r.depth * 16}px"></span><span class="lvl">${r.depth ? 'n+' + r.depth : 'n'}</span>
+        <button class="linkish dark mono" data-act="open" data-id="${esc(r.el)}">${esc(r.el)}</button> <b>${esc(e.title)}</b>${e.company ? ` · ${esc(e.company)}` : ''} <span class="muted">· ${plural(r.n, 'requirement')}</span></td></tr>`; }
+      const d = data(r.id), gone = !S.work.has(r.id), c = ch.find(x => x.id === r.id), mine = iss.filter(i => i.id === r.id);
+      return `<tr class="${c ? 'changed' : ''} ${gone ? 'gone' : ''}" data-act="open" data-id="${esc(r.id)}" tabindex="0">${vis.map(col => {
+        if (col.k === 'id') return `<th scope="row"><span class="ref">${esc(r.id)}</span>${c ? chip(c.type, { add: 'new', mod: 'edited', del: 'deleted' }[c.type]) : ''}${mine.length ? chip(mine[0].severity, mine.length + (mine[0].severity === 'error' ? ' err' : ' warn')) : ''}</th>`;
+        const v = cellOf(col, r.id, d);
+        return `<td class="${col.w ? '' : 'nw'}" ${col.tree && !g.sort ? `style="padding-left:${9 + (r.depth || 0) * 16}px"` : ''}>${col.dot && v ? dot(v) : ''}${col.tree ? `<b>${esc(v)}</b>` : esc(v)}</td>`;
+      }).join('')}</tr>`;
+    }).join('');
+    return `<div class="grid-bar"><span class="n">${plural(items.length, 'row')}${grouped ? ` in ${plural(rows.length - items.length, 'system')}` : ''} · ${vis.length} of ${cols.length} columns</span>
+        <details class="cols" ${S.colsOpen ? 'open' : ''}><summary class="btn ghost">Columns</summary><div class="cols-menu">
+          ${cols.filter(c => c.k !== 'id').map(c => `<label><input type="checkbox" data-change="col" data-grid="${esc(key)}" data-k="${esc(c.k)}" ${colHidden(key, c) ? '' : 'checked'}> ${esc(c.label)}</label>`).join('')}</div></details>
+        <button class="btn ghost" data-act="csv">Export CSV</button><button class="btn ghost" data-act="print">Print / PDF</button></div>
+      <div class="grid-wrap"><table class="sheet"><thead><tr>${vis.map(c => `<th ${c.w ? `style="min-width:${c.w}px"` : ''}>${grouped ? esc(c.label)
+        : `<button data-act="sort" data-grid="${esc(key)}" data-k="${esc(c.k)}">${esc(c.label)}${g.sort?.k === c.k ? (g.sort.dir > 0 ? ' ▲' : ' ▼') : ''}</button>`}</th>`).join('')}</tr></thead>
+        <tbody>${body || `<tr class="none"><td colspan="${vis.length}">${S.q || Object.values(S.f).some(Boolean) ? 'Nothing matches the search and filters.' : 'Nothing here yet.'}</td></tr>`}</tbody></table></div>`;
+  }
+  /* Every column, not only the visible ones; the rows are whatever the table currently shows. */
+  function exportCsv() {
+    if (!S.lastGrid) return;
+    const { cols, rows, name } = S.lastGrid, grouped = rows.some(r => r.group);
+    // A leading quote stops spreadsheet apps from running a cell as a formula.
+    const cell = v => { v = String(v ?? ''); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const head = [...(grouped ? ['System ID', 'System name'] : []), ...cols.map(c => c.label)];
+    const lines = [head, ...rows.filter(r => !r.group).map(r => { const d = get(r.id) || S.base.get(r.id).data; return [...(grouped ? [r.el, get(r.el).title] : []), ...cols.map(c => cellOf(c, r.id, d))]; })];
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + lines.map(l => l.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+    a.download = `${S.project.name}-${name}-${S.head.sha.slice(0, 7)}.csv`.replace(/[^\w.-]+/g, '-');
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast(`Exported ${plural(lines.length - 1, 'row')} to ${a.download}.`);
+  }
+
   /* ---------------- apps ---------------- */
   const appViews = {
     REQ(iss, ch) {
       const l = level(S.level);
       if (!l) return '<div class="card empty">No requirement level is visible to you.</div>';
+      const structured = l.key === leaf() && idsOf('CMP').length > 0;
+      if (!structured || !idsOf('CMP').includes(S.spec)) S.spec = '';
+      const FILTERS = [['status', 'statuses', 'All statuses'], ['type', 'reqTypes', 'All types'], ['compliance', 'compliances', 'Any compliance'], ['stability', 'stabilities', 'Any stability']];
+      const pass = id => { const d = get(id) || S.base.get(id).data; return match(id, d) && FILTERS.every(([k]) => !S.f[k] || d[k] === S.f[k]); };
+      let rows;
+      if (S.spec) {
+        rows = [];
+        subtree(S.spec, S.specDepth).forEach(e => {
+          const list = (get(e.id).allocated || []).filter(r => M.prefixOf(r) === l.key && S.work.has(r) && canSee(r) && pass(r)).sort();
+          rows.push({ group: true, el: e.id, depth: e.depth, n: list.length });
+          list.forEach(r => rows.push({ id: r, el: e.id }));
+        });
+      } else {
+        const deleted = ch.filter(c => c.type === 'del' && M.prefixOf(c.id) === l.key && canSee(c.id)).map(c => c.id);
+        rows = [...idsOf(l.key), ...deleted].sort().filter(pass).map(id => ({ id }));
+      }
+      const order = structured ? pbsOrder() : [];
+      const path = []; for (let c = S.spec; c && !path.includes(c); c = idsOf('CMP').includes(get(c).parent) ? get(c).parent : '') path.unshift(c);
+      const specBar = !structured ? '' : `<div class="card specbar">
+          <label class="field"><span>Specification</span><select data-change="spec">
+            <option value="">All ${esc(l.key)} requirements (flat list)</option>
+            ${order.map(e => `<option value="${esc(e.id)}" ${e.id === S.spec ? 'selected' : ''}>${'   '.repeat(e.depth)}${esc(e.id)} · ${esc(get(e.id).title)} (${rolled(e.id).size})</option>`).join('')}</select></label>
+          ${S.spec ? `<label class="field"><span>Levels shown</span><select data-change="specDepth">
+            ${[['0', 'This element only (n)'], ['1', 'Down to n+1'], ['2', 'Down to n+2'], ['all', 'All levels below']].map(([v, t]) => `<option value="${v}" ${String(S.specDepth) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+          <div class="crumbs"><span class="section-lbl">Path</span> ${path.map((c, i) => i === path.length - 1 ? `<b>${esc(get(c).title)}</b>` : `<button class="linkish dark" data-act="spec" data-id="${esc(c)}">${esc(get(c).title)}</button> ›`).join(' ')}
+            ${cmpKids(S.spec).length ? `<span class="section-lbl" style="margin-left:14px">n+1</span> ${cmpKids(S.spec).map(c => `<button class="refbtn" data-act="spec" data-id="${esc(c)}" title="Open this specification">${esc(get(c).title)}</button>`).join('')}` : ''}</div>` : `<div class="help" style="align-self:center">Pick a system to see its requirements structured by the product breakdown, with the levels below it.</div>`}
+        </div>`;
       return `<div class="tabs">${S.project.levels.map(x => RANK[acc('requirements/' + x.key)] >= 1
           ? `<button data-act="level" data-level="${esc(x.key)}" class="${x.key === l.key ? 'on' : ''}"><span class="mono">${esc(x.key)}</span> ${esc(x.name)} <span class="count">${idsOf(x.key).length}</span></button>`
           : `<button disabled><span class="mono">${esc(x.key)}</span> ${esc(x.name)} <span class="count">locked</span></button>`).join('')}</div>
-        <div class="tools">${search(`${l.key} by ID, title or text`)}
-          <select data-change="statusF" aria-label="Status filter"><option value="">All statuses</option>${S.project.statuses.map(s => `<option ${S.statusF === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
-        ${listOf(l.key, iss, ch, { filter: d => !S.statusF || d.status === S.statusF })}`;
+        ${specBar}
+        <div class="tools">${search(`${l.key}: any attribute`)}
+          ${FILTERS.map(([k, opts, any]) => `<select data-change="filter" data-f="${k}" aria-label="${any}"><option value="">${any}</option>${S.project[opts].map(o => `<option ${S.f[k] === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`).join('')}</div>
+        ${grid('req:' + l.key, reqCols(l.key), rows, iss, ch, `${l.key}${S.spec ? '-' + S.spec : ''}`)}`;
     },
     CMP(iss, ch) {
-      const all = idsOf('CMP'), seen = new Set();
-      const walk = (id, depth) => { if (seen.has(id)) return ''; seen.add(id); return (match(id, get(id)) ? row(id, iss, ch, depth) : '') + all.filter(c => get(c).parent === id).map(c => walk(c, depth + 1)).join(''); };
-      const roots = all.filter(id => !all.includes(get(id).parent));
-      const html = roots.map(r => walk(r, 0)).join('') + all.filter(id => !seen.has(id)).map(id => walk(id, 0)).join('');
+      const order = pbsOrder(), max = Math.max(0, ...order.map(e => e.depth));
+      S.zoom = Math.min(S.zoom, max);
+      const box = (id, depth) => {
+        const d = get(id), kids = cmpKids(id), own = (d.allocated || []).length, all = rolled(id).size;
+        return `<div class="pbs k-${esc(d.kind)}"><button class="pbs-head" data-act="spec" data-id="${esc(id)}" title="Open the specification for ${esc(d.title)}">
+            <span class="ref">${esc(id)}</span><b>${esc(d.title)}</b>${d.company ? `<span class="pbs-co">${esc(d.company)}</span>` : ''}
+            <span class="pbs-n">${own} req${own === 1 ? '' : 's'}${all > own ? ` · ${all} incl. below` : ''}</span></button>
+          ${kids.length ? (depth < S.zoom ? `<div class="pbs-kids">${kids.map(k => box(k, depth + 1)).join('')}</div>`
+            : `<button class="pbs-more" data-act="zoom" data-z="${depth + 1}">+ ${subtree(id, 'all').length - 1} below</button>`) : ''}</div>`;
+      };
+      const roots = order.filter(e => e.depth === 0).map(e => e.id);
+      const rows = order.filter(e => match(e.id, get(e.id))).map(e => ({ id: e.id, depth: e.depth }));
       const sys = idsOf(leaf()), un = sys.filter(id => !linking('CMP', 'allocated', id).length && get(id).status !== 'obsolete');
-      return `<div class="tools">${search('components')}</div>
-        <div class="reqs">${html || '<div class="empty">No components yet.</div>'}</div>
-        ${sys.length ? `<div class="card" style="margin-top:16px"><h3>Allocation of ${esc(leaf())} requirements</h3>
-          <div class="muted" style="margin-bottom:8px">${sys.length - un.length} of ${sys.length} allocated to a component.</div>
-          ${un.length ? `<div class="section-lbl" style="margin-bottom:6px">Not allocated</div>${un.map(refbtn).join('')}` : ''}</div>` : ''}`;
+      return `<div class="card" style="margin-bottom:16px"><div class="zoombar"><h3 style="margin:0">Product breakdown</h3>
+            <span class="section-lbl" style="margin-left:auto">Zoom</span>${Array.from({ length: max + 1 }, (_, z) => `<button data-act="zoom" data-z="${z}" class="${z === S.zoom ? 'on' : ''}">${z ? 'n+' + z : 'n'}</button>`).join('')}</div>
+          <div class="muted" style="margin:4px 0 12px">Click a system to open its specification. Zoom out to hide lower levels on a large breakdown.</div>
+          <div class="scroll"><div class="pbs-root">${roots.map(r => box(r, 0)).join('') || '<div class="muted">No components yet.</div>'}</div></div></div>
+        <div class="tools">${search('the breakdown')}</div>
+        ${grid('cmp', cmpCols(), rows, iss, ch, 'PBS')}
+        ${un.length ? `<div class="card" style="margin-top:16px"><div class="section-lbl" style="margin-bottom:6px">${esc(leaf())} requirements not allocated to any system</div>${un.map(refbtn).join('')}</div>` : ''}`;
     },
     IF(iss, ch) {
       const ifs = idsOf('IF'), comps = idsOf('CMP').filter(c => ifs.some(i => get(i).from === c || get(i).to === c));
@@ -749,8 +877,20 @@
   }
 
   const actions = {
-    view(t) { S.view = t.dataset.view; S.sel = null; S.q = ''; fixView(); renderDrawer(); render(); window.scrollTo(0, 0); },
-    level(t) { S.level = t.dataset.level; S.q = ''; render(); },
+    view(t) { S.view = t.dataset.view; S.sel = null; S.q = ''; S.f = {}; S.colsOpen = false; fixView(); renderDrawer(); render(); window.scrollTo(0, 0); },
+    level(t) { S.level = t.dataset.level; S.q = ''; S.f = {}; render(); },
+    sort(t) {
+      const g = S.grid[t.dataset.grid] = S.grid[t.dataset.grid] || {}, k = t.dataset.k;
+      g.sort = g.sort?.k !== k ? { k, dir: 1 } : g.sort.dir > 0 ? { k, dir: -1 } : null;
+      ls.set('se.grid', S.grid); render();
+    },
+    spec(t) {
+      if (RANK[acc('requirements/' + leaf())] < 1) { toast(`You do not have access to ${leaf()} requirements.`, true); return; }
+      S.view = 'app:REQ'; S.level = leaf(); S.spec = t.dataset.id; S.q = ''; S.f = {}; S.sel = null; renderDrawer(); render(); window.scrollTo(0, 0);
+    },
+    zoom(t) { S.zoom = +t.dataset.z; render(); },
+    csv() { exportCsv(); },
+    print() { window.print(); },
     open(t) { openReq(t.dataset.id); },
     close() { S.sel = null; renderDrawer(); $$('.req.sel').forEach(n => n.classList.remove('sel')); },
     persona(t) { setPersona(t.dataset.login); },
@@ -804,6 +944,9 @@
   };
 
   document.addEventListener('click', e => {
+    const sum = e.target.closest('.cols > summary');
+    if (sum) S.colsOpen = !sum.parentElement.open;
+    else if (S.colsOpen && !e.target.closest('.cols')) { S.colsOpen = false; $$('.cols[open]').forEach(d => { d.open = false; }); }
     const t = e.target.closest('[data-act]');
     if (t && actions[t.dataset.act]) { if (t.tagName !== 'A') e.preventDefault(); actions[t.dataset.act](t); }
   });
@@ -815,12 +958,23 @@
     const k = e.target.dataset.change;
     if (k === 'branch') run(loadBranch(e.target.value));
     if (k === 'persona') setPersona(e.target.value);
-    if (k === 'statusF') { S.statusF = e.target.value; render(); }
+    if (k === 'filter') { S.f[e.target.dataset.f] = e.target.value; render(); }
+    if (k === 'spec') { S.spec = e.target.value; render(); }
+    if (k === 'specDepth') { S.specDepth = e.target.value; render(); }
+    if (k === 'col') {
+      const key = e.target.dataset.grid, g = S.grid[key] = S.grid[key] || {};
+      const hidden = new Set(S.lastGrid.cols.filter(c => colHidden(key, c)).map(c => c.k));
+      e.target.checked ? hidden.delete(e.target.dataset.k) : hidden.add(e.target.dataset.k);
+      g.hidden = [...hidden]; S.colsOpen = true; ls.set('se.grid', S.grid); render();
+    }
   });
   document.addEventListener('input', e => { if (e.target.id === 'q') { S.q = e.target.value; render(); } });
   document.addEventListener('mouseover', e => { if (S.view === 'trace') highlight(e.target.closest('[data-node]')?.dataset.node || null); });
   document.addEventListener('focusin', e => { if (S.view === 'trace' && e.target.dataset?.node) highlight(e.target.dataset.node); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.sel) actions.close(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && S.sel) actions.close();
+    if (e.key === 'Enter' && e.target.matches('tr[data-act]')) e.target.click();
+  });
   window.addEventListener('resize', () => { if (S.view === 'trace') drawTrace(); });
 
   /* ---------------- boot ---------------- */

@@ -34,5 +34,29 @@
     "inspection",
     "demonstration"
   ],
-  "description": "Autonomous water-quality monitoring buoy fleet (sample model)."
+  "description": "Autonomous water-quality monitoring buoy fleet (sample model).",
+  "objectTypes": [
+    "requirement",
+    "information",
+    "heading"
+  ],
+  "reqTypes": [
+    "functional",
+    "performance",
+    "interface",
+    "environmental",
+    "constraint",
+    "safety"
+  ],
+  "stabilities": [
+    "stable",
+    "likely to change",
+    "volatile"
+  ],
+  "compliances": [
+    "not assessed",
+    "compliant",
+    "partially compliant",
+    "non-compliant"
+  ]
 }

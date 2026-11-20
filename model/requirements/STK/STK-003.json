@@ -1,0 +1,9 @@
+{
+  "id": "STK-003",
+  "title": "Low operating burden",
+  "text": "The operations team shall be able to run the monitoring fleet without adding staff.",
+  "rationale": "The team has one boat crew shared with other duties.",
+  "source": "Operations team",
+  "status": "approved",
+  "priority": "should"
+}

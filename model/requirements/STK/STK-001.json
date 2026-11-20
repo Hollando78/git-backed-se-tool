@@ -1,0 +1,9 @@
+{
+  "id": "STK-001",
+  "title": "Continuous water-quality awareness",
+  "text": "The Harbour Authority shall have continuous awareness of water quality across the inner harbour.",
+  "rationale": "Manual sampling happens weekly and misses short-lived events.",
+  "source": "Harbour Authority",
+  "status": "approved",
+  "priority": "must"
+}

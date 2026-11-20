@@ -1,0 +1,12 @@
+{
+  "id": "SYS-006",
+  "title": "Energy autonomy",
+  "text": "The buoy shall operate for at least 90 days with average solar irradiance of 1.0 kWh/m2/day.",
+  "rationale": "Worst-case winter irradiance at the harbour latitude.",
+  "status": "approved",
+  "priority": "must",
+  "verification": "analysis",
+  "traces": [
+    "USER-005"
+  ]
+}

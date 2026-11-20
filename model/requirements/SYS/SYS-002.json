@@ -1,0 +1,11 @@
+{
+  "id": "SYS-002",
+  "title": "Reading latency",
+  "text": "The system shall make each reading available to shore users within 60 seconds of sampling.",
+  "status": "approved",
+  "priority": "must",
+  "verification": "test",
+  "traces": [
+    "USER-001"
+  ]
+}

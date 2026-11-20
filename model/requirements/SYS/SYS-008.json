@@ -1,0 +1,12 @@
+{
+  "id": "SYS-008",
+  "title": "Navigation light",
+  "text": "The buoy shall display a yellow flashing light with a nominal range of at least 2 nautical miles.",
+  "rationale": "IALA special mark characteristics.",
+  "status": "approved",
+  "priority": "must",
+  "verification": "inspection",
+  "traces": [
+    "USER-007"
+  ]
+}

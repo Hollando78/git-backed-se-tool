@@ -1,0 +1,10 @@
+{
+  "id": "USER-003",
+  "title": "Receive threshold alerts",
+  "text": "A duty officer shall be alerted when any monitored parameter leaves its permitted range.",
+  "status": "approved",
+  "priority": "must",
+  "traces": [
+    "STK-002"
+  ]
+}

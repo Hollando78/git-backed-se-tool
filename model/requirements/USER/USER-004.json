@@ -1,0 +1,11 @@
+{
+  "id": "USER-004",
+  "title": "Configure alert thresholds",
+  "text": "An analyst shall be able to set the permitted range for each parameter without a site visit.",
+  "rationale": "Permitted ranges change with season and with regulator guidance.",
+  "status": "approved",
+  "priority": "should",
+  "traces": [
+    "STK-002"
+  ]
+}

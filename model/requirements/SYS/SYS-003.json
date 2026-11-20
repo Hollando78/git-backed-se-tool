@@ -1,0 +1,12 @@
+{
+  "id": "SYS-003",
+  "title": "Data retention",
+  "text": "The system shall retain all readings for at least 24 months.",
+  "rationale": "Two full seasonal cycles for baseline comparison.",
+  "status": "approved",
+  "priority": "should",
+  "verification": "inspection",
+  "traces": [
+    "USER-002"
+  ]
+}

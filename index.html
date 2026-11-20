@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The page holds a GitHub token, so it may only talk to api.github.com and may only run its own scripts. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://api.github.com; img-src https://avatars.githubusercontent.com data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Strata — git-backed requirements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="app/app.css">
+</head>
+<body>
+<div id="shell"></div>
+<div id="drawer"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript>This app needs JavaScript.</noscript>
+<script src="app/model.js"></script>
+<script src="app/app.js"></script>
+</body>
+</html>

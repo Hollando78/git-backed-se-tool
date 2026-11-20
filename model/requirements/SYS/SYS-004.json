@@ -1,0 +1,11 @@
+{
+  "id": "SYS-004",
+  "title": "Alert latency",
+  "text": "The system shall raise an alert within 2 minutes of a reading falling outside its permitted range.",
+  "status": "approved",
+  "priority": "must",
+  "verification": "test",
+  "traces": [
+    "USER-003"
+  ]
+}

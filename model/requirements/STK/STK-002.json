@@ -1,0 +1,9 @@
+{
+  "id": "STK-002",
+  "title": "Early pollution warning",
+  "text": "The environmental regulator shall be warned of pollution events early enough to direct a response.",
+  "rationale": "Response effectiveness drops sharply after the first hour of a spill.",
+  "source": "Environmental regulator",
+  "status": "approved",
+  "priority": "must"
+}

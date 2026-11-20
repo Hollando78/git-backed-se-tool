@@ -1,0 +1,38 @@
+{
+  "name": "Harbour Sentinel",
+  "levels": [
+    {
+      "key": "STK",
+      "name": "Stakeholder",
+      "parent": null
+    },
+    {
+      "key": "USER",
+      "name": "User",
+      "parent": "STK"
+    },
+    {
+      "key": "SYS",
+      "name": "System",
+      "parent": "USER"
+    }
+  ],
+  "statuses": [
+    "draft",
+    "review",
+    "approved",
+    "obsolete"
+  ],
+  "priorities": [
+    "must",
+    "should",
+    "could"
+  ],
+  "verification": [
+    "test",
+    "analysis",
+    "inspection",
+    "demonstration"
+  ],
+  "description": "Autonomous water-quality monitoring buoy fleet (sample model)."
+}

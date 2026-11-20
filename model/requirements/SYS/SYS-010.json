@@ -1,0 +1,11 @@
+{
+  "id": "SYS-010",
+  "title": "AIS aid-to-navigation broadcast",
+  "text": "The buoy shall broadcast its position as an AIS aid-to-navigation message.",
+  "rationale": "Proposed by the harbour master; cost impact under assessment.",
+  "status": "draft",
+  "priority": "could",
+  "traces": [
+    "USER-007"
+  ]
+}

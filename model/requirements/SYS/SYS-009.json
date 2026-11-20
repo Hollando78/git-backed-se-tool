@@ -1,0 +1,12 @@
+{
+  "id": "SYS-009",
+  "title": "Outage buffering",
+  "text": "The buoy shall store at least 7 days of readings locally and forward them when the link is restored.",
+  "status": "review",
+  "priority": "should",
+  "verification": "test",
+  "traces": [
+    "USER-001",
+    "USER-005"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "SYS-005",
+  "title": "Remote threshold configuration",
+  "text": "The system shall allow the permitted range of each parameter to be changed remotely per buoy.",
+  "status": "approved",
+  "priority": "should",
+  "verification": "demonstration",
+  "traces": [
+    "USER-004"
+  ]
+}

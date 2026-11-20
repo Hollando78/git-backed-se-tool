@@ -1,0 +1,10 @@
+{
+  "id": "USER-001",
+  "title": "View live readings",
+  "text": "A duty officer shall be able to view the latest reading from every buoy on a single screen.",
+  "status": "approved",
+  "priority": "must",
+  "traces": [
+    "STK-001"
+  ]
+}

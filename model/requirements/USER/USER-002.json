@@ -1,0 +1,11 @@
+{
+  "id": "USER-002",
+  "title": "Review historical trends",
+  "text": "An analyst shall be able to review readings from any buoy over a chosen date range.",
+  "rationale": "Seasonal baselines are needed to judge whether a reading is abnormal.",
+  "status": "approved",
+  "priority": "should",
+  "traces": [
+    "STK-001"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "USER-005",
+  "title": "Unattended operation",
+  "text": "A buoy shall operate for a full season without a maintenance visit.",
+  "status": "approved",
+  "priority": "must",
+  "traces": [
+    "STK-003"
+  ]
+}

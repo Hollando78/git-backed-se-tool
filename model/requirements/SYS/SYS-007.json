@@ -1,0 +1,11 @@
+{
+  "id": "SYS-007",
+  "title": "Health telemetry",
+  "text": "The buoy shall report battery state, link quality and sensor status at least once per hour.",
+  "status": "review",
+  "priority": "should",
+  "verification": "test",
+  "traces": [
+    "USER-006"
+  ]
+}

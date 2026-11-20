@@ -1,0 +1,13 @@
+{
+  "id": "SYS-001",
+  "title": "Sampling rate",
+  "text": "The buoy shall sample pH, dissolved oxygen, turbidity and temperature at least once every 10 minutes.",
+  "rationale": "Ten minutes resolves tidal-cycle variation with margin.",
+  "status": "approved",
+  "priority": "must",
+  "verification": "test",
+  "traces": [
+    "USER-001",
+    "USER-002"
+  ]
+}

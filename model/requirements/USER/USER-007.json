@@ -1,0 +1,10 @@
+{
+  "id": "USER-007",
+  "title": "Visible to vessels",
+  "text": "A vessel master shall be able to see and identify each buoy by day and by night.",
+  "status": "approved",
+  "priority": "must",
+  "traces": [
+    "STK-004"
+  ]
+}

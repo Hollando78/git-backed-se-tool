@@ -1,0 +1,11 @@
+{
+  "id": "USER-006",
+  "title": "Remote health check",
+  "text": "A technician shall be able to check the health of any buoy from shore.",
+  "rationale": "Avoids boat trips to diagnose faults that turn out to be minor.",
+  "status": "review",
+  "priority": "should",
+  "traces": [
+    "STK-003"
+  ]
+}

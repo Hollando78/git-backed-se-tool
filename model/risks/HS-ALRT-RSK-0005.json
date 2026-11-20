@@ -1,14 +1,14 @@
 {
-  "id": "RSK-005",
+  "id": "HS-ALRT-RSK-0005",
   "title": "Alert pipeline too slow under fleet load",
-  "description": "If the ingest queue backs up, then alerts are raised later than the 2 minute limit.",
+  "cause": "The ingest queue backs up.",
+  "consequence": "Alerts are raised later than the 2 minute limit.",
   "likelihood": 4,
   "impact": 4,
-  "status": "open",
+  "status": "impacting",
   "mitigation": "Profile the ingest queue; evaluate a priority lane for out-of-range readings.",
   "owner": "Priya Nair",
-  "affects": [
-    "CMP-010",
-    "SYS-004"
+  "requirements": [
+    "HS-HSS-REQ-0004"
   ]
 }

@@ -1,0 +1,11 @@
+{
+  "id": "HS-BUOY-RSK-0007",
+  "title": "Theft or tampering",
+  "cause": "A buoy is tampered with.",
+  "consequence": "Data is lost and equipment must be replaced.",
+  "likelihood": 2,
+  "impact": 3,
+  "status": "closed",
+  "mitigation": "Tamper switch reported in health telemetry; equipment insured.",
+  "owner": "Sofia Marques"
+}

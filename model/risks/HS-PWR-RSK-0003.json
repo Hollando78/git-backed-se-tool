@@ -1,0 +1,13 @@
+{
+  "id": "HS-PWR-RSK-0003",
+  "title": "Winter irradiance below design assumption",
+  "cause": "Winter irradiance is lower than 1.0 kWh/m2/day.",
+  "consequence": "Buoys shut down before the season ends.",
+  "likelihood": 3,
+  "impact": 5,
+  "status": "open",
+  "owner": "Ingrid Solberg",
+  "requirements": [
+    "HS-BUOY-REQ-0006"
+  ]
+}

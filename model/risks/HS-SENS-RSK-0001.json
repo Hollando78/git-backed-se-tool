@@ -1,14 +1,14 @@
 {
-  "id": "RSK-001",
+  "id": "HS-SENS-RSK-0001",
   "title": "Biofouling degrades sensor accuracy",
-  "description": "If marine growth builds up on the probes, then readings drift and alerts become unreliable.",
+  "cause": "Marine growth builds up on the probes.",
+  "consequence": "Readings drift and alerts become unreliable.",
   "likelihood": 4,
   "impact": 3,
   "status": "mitigating",
   "mitigation": "Automatic wiper every 6 h; drift check against a reference sample at each visit.",
   "owner": "Ingrid Solberg",
-  "affects": [
-    "CMP-003",
-    "SYS-001"
+  "requirements": [
+    "HS-BUOY-REQ-0001"
   ]
 }

@@ -1,0 +1,12 @@
+{
+  "id": "IF-004",
+  "title": "Buoy uplink",
+  "description": "LTE-M band 20; MQTT over TLS.",
+  "kind": "rf",
+  "from": "CMP-006",
+  "to": "CMP-012",
+  "status": "agreed",
+  "requirements": [
+    "SYS-002"
+  ]
+}

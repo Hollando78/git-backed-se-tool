@@ -1,0 +1,12 @@
+{
+  "id": "IF-008",
+  "title": "Threshold downlink",
+  "description": "Per-buoy threshold configuration pushed to the controller.",
+  "kind": "data",
+  "from": "CMP-010",
+  "to": "CMP-004",
+  "status": "draft",
+  "requirements": [
+    "SYS-005"
+  ]
+}

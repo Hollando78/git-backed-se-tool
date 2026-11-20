@@ -1,0 +1,12 @@
+{
+  "id": "IF-005",
+  "title": "Network to ingest",
+  "description": "MQTT broker endpoint; one topic per buoy.",
+  "kind": "data",
+  "from": "CMP-012",
+  "to": "CMP-009",
+  "status": "agreed",
+  "requirements": [
+    "SYS-002"
+  ]
+}

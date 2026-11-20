@@ -1,0 +1,12 @@
+{
+  "id": "IF-009",
+  "title": "Operator alerts",
+  "description": "On-screen and SMS notification to the duty officer.",
+  "kind": "human",
+  "from": "CMP-010",
+  "to": "CMP-011",
+  "status": "agreed",
+  "requirements": [
+    "SYS-004"
+  ]
+}

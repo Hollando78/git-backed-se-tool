@@ -1,0 +1,12 @@
+{
+  "id": "IF-010",
+  "title": "Light power and control",
+  "description": "Switched 12 V feed with dusk sensor override.",
+  "kind": "power",
+  "from": "CMP-004",
+  "to": "CMP-007",
+  "status": "draft",
+  "requirements": [
+    "SYS-008"
+  ]
+}

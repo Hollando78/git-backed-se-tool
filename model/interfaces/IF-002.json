@@ -1,0 +1,13 @@
+{
+  "id": "IF-002",
+  "title": "Controller to modem",
+  "description": "UART with AT command set; batched uploads after an outage.",
+  "kind": "data",
+  "from": "CMP-004",
+  "to": "CMP-006",
+  "status": "agreed",
+  "requirements": [
+    "SYS-002",
+    "SYS-009"
+  ]
+}

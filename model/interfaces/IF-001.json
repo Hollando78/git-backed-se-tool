@@ -1,0 +1,12 @@
+{
+  "id": "IF-001",
+  "title": "Sensor bus",
+  "description": "RS-485 Modbus; controller polls each probe.",
+  "kind": "data",
+  "from": "CMP-003",
+  "to": "CMP-004",
+  "status": "baselined",
+  "requirements": [
+    "SYS-001"
+  ]
+}

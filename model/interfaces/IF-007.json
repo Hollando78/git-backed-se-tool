@@ -1,0 +1,12 @@
+{
+  "id": "IF-007",
+  "title": "Dashboard query API",
+  "description": "Read-only HTTP API for live values and date-range queries.",
+  "kind": "data",
+  "from": "CMP-009",
+  "to": "CMP-011",
+  "status": "draft",
+  "requirements": [
+    "SYS-003"
+  ]
+}

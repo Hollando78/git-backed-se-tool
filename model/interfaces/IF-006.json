@@ -1,0 +1,12 @@
+{
+  "id": "IF-006",
+  "title": "Reading stream",
+  "description": "Validated readings published to the alerting service.",
+  "kind": "data",
+  "from": "CMP-009",
+  "to": "CMP-010",
+  "status": "draft",
+  "requirements": [
+    "SYS-004"
+  ]
+}

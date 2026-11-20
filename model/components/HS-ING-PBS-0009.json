@@ -1,13 +1,10 @@
 {
-  "id": "CMP-009",
+  "id": "HS-ING-PBS-0009",
   "title": "Ingest and storage service",
   "description": "Receives readings, validates them and stores the time series.",
   "kind": "software",
+  "status": "approved",
   "owner": "Luca Bianchi",
   "company": "Tidewater Systems",
-  "parent": "CMP-008",
-  "allocated": [
-    "SYS-002",
-    "SYS-003"
-  ]
+  "parent": "HS-SHORE-PBS-0008"
 }

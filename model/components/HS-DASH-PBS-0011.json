@@ -1,9 +1,10 @@
 {
-  "id": "CMP-011",
+  "id": "HS-DASH-PBS-0011",
   "title": "Operator dashboard",
   "description": "Web application for live readings, trends and configuration.",
   "kind": "software",
+  "status": "proposed",
   "owner": "Luca Bianchi",
   "company": "Tidewater Systems",
-  "parent": "CMP-008"
+  "parent": "HS-SHORE-PBS-0008"
 }

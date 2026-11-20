@@ -1,12 +1,10 @@
 {
-  "id": "CMP-005",
+  "id": "HS-PWR-PBS-0005",
   "title": "Power system",
   "description": "Solar panels, charge controller and battery pack.",
   "kind": "hardware",
+  "status": "approved",
   "owner": "Ingrid Solberg",
   "company": "Tidewater Systems",
-  "parent": "CMP-002",
-  "allocated": [
-    "SYS-006"
-  ]
+  "parent": "HS-BUOY-PBS-0002"
 }

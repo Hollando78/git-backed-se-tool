@@ -1,12 +1,10 @@
 {
-  "id": "CMP-006",
+  "id": "HS-COMM-PBS-0006",
   "title": "Communications modem",
   "description": "LTE-M modem and antenna.",
   "kind": "hardware",
+  "status": "approved",
   "owner": "Kenji Watanabe",
   "company": "Tidewater Systems",
-  "parent": "CMP-002",
-  "allocated": [
-    "SYS-002"
-  ]
+  "parent": "HS-BUOY-PBS-0002"
 }

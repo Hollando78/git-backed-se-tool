@@ -1,12 +1,9 @@
 {
-  "id": "CMP-001",
+  "id": "HS-HSS-PBS-0001",
   "title": "Harbour Sentinel system",
   "description": "The complete monitoring capability: buoy fleet plus shore services.",
   "kind": "system",
+  "status": "approved",
   "owner": "Amara Okafor",
-  "company": "Tidewater Systems",
-  "allocated": [
-    "SYS-002",
-    "SYS-004"
-  ]
+  "company": "Tidewater Systems"
 }

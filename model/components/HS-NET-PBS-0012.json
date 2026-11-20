@@ -1,8 +1,9 @@
 {
-  "id": "CMP-012",
+  "id": "HS-NET-PBS-0012",
   "title": "Cellular network",
   "description": "Public LTE-M network operated by a third party.",
   "kind": "external",
+  "status": "approved",
   "company": "Nordlink Mobile",
-  "parent": "CMP-001"
+  "parent": "HS-HSS-PBS-0001"
 }

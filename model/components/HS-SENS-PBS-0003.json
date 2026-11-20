@@ -1,12 +1,10 @@
 {
-  "id": "CMP-003",
+  "id": "HS-SENS-PBS-0003",
   "title": "Sensor suite",
   "description": "pH, dissolved oxygen, turbidity and temperature probes with anti-fouling wiper.",
   "kind": "hardware",
+  "status": "approved",
   "owner": "Mei Lin",
   "company": "Aquasense Instruments",
-  "parent": "CMP-002",
-  "allocated": [
-    "SYS-001"
-  ]
+  "parent": "HS-BUOY-PBS-0002"
 }

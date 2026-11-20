@@ -1,13 +1,10 @@
 {
-  "id": "CMP-007",
+  "id": "HS-NAV-PBS-0007",
   "title": "Navigation aids",
   "description": "Marker light and AIS transponder.",
   "kind": "hardware",
+  "status": "approved",
   "owner": "Ingrid Solberg",
   "company": "Tidewater Systems",
-  "parent": "CMP-002",
-  "allocated": [
-    "SYS-008",
-    "SYS-010"
-  ]
+  "parent": "HS-BUOY-PBS-0002"
 }

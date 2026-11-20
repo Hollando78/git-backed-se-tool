@@ -1,13 +1,10 @@
 {
-  "id": "CMP-002",
+  "id": "HS-BUOY-PBS-0002",
   "title": "Buoy",
   "description": "Moored unit deployed in the harbour.",
   "kind": "subsystem",
+  "status": "approved",
   "owner": "Ingrid Solberg",
   "company": "Tidewater Systems",
-  "parent": "CMP-001",
-  "allocated": [
-    "SYS-006",
-    "SYS-009"
-  ]
+  "parent": "HS-HSS-PBS-0001"
 }

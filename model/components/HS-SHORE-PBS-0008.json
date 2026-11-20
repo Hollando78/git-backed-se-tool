@@ -1,13 +1,10 @@
 {
-  "id": "CMP-008",
+  "id": "HS-SHORE-PBS-0008",
   "title": "Shore platform",
   "description": "Cloud-hosted services used by the Harbour Authority.",
   "kind": "subsystem",
+  "status": "approved",
   "owner": "Priya Nair",
   "company": "Tidewater Systems",
-  "parent": "CMP-001",
-  "allocated": [
-    "SYS-003",
-    "SYS-004"
-  ]
+  "parent": "HS-HSS-PBS-0001"
 }

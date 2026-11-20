@@ -1,14 +1,10 @@
 {
-  "id": "CMP-004",
+  "id": "HS-CTRL-PBS-0004",
   "title": "Buoy controller",
   "description": "Embedded firmware: sampling schedule, local storage, health monitoring.",
   "kind": "software",
+  "status": "approved",
   "owner": "Kenji Watanabe",
   "company": "Tidewater Systems",
-  "parent": "CMP-002",
-  "allocated": [
-    "SYS-001",
-    "SYS-007",
-    "SYS-009"
-  ]
+  "parent": "HS-BUOY-PBS-0002"
 }

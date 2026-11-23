@@ -1,15 +1,15 @@
 {
-  "id": "HS-COMM-RSK-0002",
+  "id": "HS-A1.BA1.TFA1-RSK-0002",
   "title": "Cellular coverage gaps at outer moorings",
   "cause": "Coverage is poor at the outer moorings.",
   "consequence": "Readings arrive late or not at all.",
   "likelihood": 3,
   "impact": 4,
   "status": "mitigating",
-  "mitigation": "Site survey before deployment; store-and-forward on the buoy (HS-CTRL-DEC-0002).",
+  "mitigation": "Site survey before deployment; store-and-forward on the buoy (HS-A1.BA1.KFA1-DEC-0002).",
   "owner": "Kenji Watanabe",
   "requirements": [
-    "HS-CTRL-REQ-0009",
-    "HS-HSS-REQ-0002"
+    "HS-A1-REQ-0002",
+    "HS-A1.BA1.KFA1-REQ-0009"
   ]
 }

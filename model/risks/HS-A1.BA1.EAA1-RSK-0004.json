@@ -1,5 +1,5 @@
 {
-  "id": "HS-NAV-RSK-0004",
+  "id": "HS-A1.BA1.EAA1-RSK-0004",
   "title": "Vessel strike",
   "cause": "A vessel does not see a buoy.",
   "consequence": "A collision can damage the vessel and destroy the buoy.",
@@ -9,6 +9,6 @@
   "mitigation": "Marker light to IALA special mark characteristics; positions published in notices to mariners.",
   "owner": "Sofia Marques",
   "requirements": [
-    "HS-NAV-REQ-0008"
+    "HS-A1.BA1.EAA1-REQ-0008"
   ]
 }

@@ -1,11 +1,11 @@
 {
-  "id": "HS-BUOY-VER-0001",
+  "id": "HS-A1.BA1-VER-0001",
   "title": "Sampling interval bench test",
   "method": "test",
   "procedure": "Run the buoy on the bench for 24 h; every parameter is sampled at intervals of 10 min or less.",
   "result": "passed",
   "notes": "Longest observed interval 9 min 58 s.",
   "verifies": [
-    "HS-BUOY-REQ-0001"
+    "HS-A1.BA1-REQ-0001"
   ]
 }

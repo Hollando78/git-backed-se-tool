@@ -1,11 +1,11 @@
 {
-  "id": "HS-HSS-VER-0002",
+  "id": "HS-A1-VER-0002",
   "title": "End-to-end latency test",
   "method": "test",
   "procedure": "Timestamp 500 samples at the probe and at the dashboard API; 95th percentile under 60 s.",
   "result": "passed",
   "notes": "95th percentile 41 s.",
   "verifies": [
-    "HS-HSS-REQ-0002"
+    "HS-A1-REQ-0002"
   ]
 }

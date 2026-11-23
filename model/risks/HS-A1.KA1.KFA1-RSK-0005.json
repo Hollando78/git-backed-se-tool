@@ -1,5 +1,5 @@
 {
-  "id": "HS-ALRT-RSK-0005",
+  "id": "HS-A1.KA1.KFA1-RSK-0005",
   "title": "Alert pipeline too slow under fleet load",
   "cause": "The ingest queue backs up.",
   "consequence": "Alerts are raised later than the 2 minute limit.",
@@ -9,6 +9,6 @@
   "mitigation": "Profile the ingest queue; evaluate a priority lane for out-of-range readings.",
   "owner": "Priya Nair",
   "requirements": [
-    "HS-HSS-REQ-0004"
+    "HS-A1-REQ-0004"
   ]
 }

@@ -1,12 +1,12 @@
 {
-  "id": "HS-SENS-DEC-0003",
+  "id": "HS-A1.BA1.BTA1-DEC-0003",
   "title": "Optical dissolved-oxygen probe",
   "context": "Membrane probes need recalibration more often than a seasonal visit allows.",
   "options": "Galvanic membrane probe; optical luminescence probe.",
   "decision": "Optical probe. Higher unit cost, but stable for 12 months.",
   "status": "accepted",
   "affects": [
-    "HS-BUOY-REQ-0001",
-    "HS-SENS-PBS-0003"
+    "HS-A1.BA1-REQ-0001",
+    "HS-A1.BA1.BTA1-PBS-0003"
   ]
 }

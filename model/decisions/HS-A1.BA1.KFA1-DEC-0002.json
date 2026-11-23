@@ -1,12 +1,12 @@
 {
-  "id": "HS-CTRL-DEC-0002",
+  "id": "HS-A1.BA1.KFA1-DEC-0002",
   "title": "Store and forward on the buoy",
-  "context": "Link outages are expected at the outer moorings (HS-COMM-RSK-0002).",
+  "context": "Link outages are expected at the outer moorings (HS-A1.BA1.TFA1-RSK-0002).",
   "options": "Drop readings during an outage; buffer on the buoy; add a second modem.",
   "decision": "Buffer 7 days on the buoy and forward in batches when the link returns.",
   "status": "accepted",
   "affects": [
-    "HS-CTRL-PBS-0004",
-    "HS-CTRL-REQ-0009"
+    "HS-A1.BA1.KFA1-PBS-0004",
+    "HS-A1.BA1.KFA1-REQ-0009"
   ]
 }

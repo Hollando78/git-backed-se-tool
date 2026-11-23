@@ -1,0 +1,27 @@
+[
+  {
+    "doc": "INT:L1:ALL",
+    "title": "Harbour Sentinel: Interfaces, level 1, all systems",
+    "app": "INT",
+    "system": "ALL",
+    "version": "1.0",
+    "type": "major",
+    "description": "",
+    "format": "csv",
+    "by": "Hollando78",
+    "date": "2026-11-23T22:50:27.157Z",
+    "commit": "26441fa437d0bf45f1969e88d146a7f0c4df3f36",
+    "branch": "se/Hollando78-202611232249",
+    "view": {
+      "view": "app:INT",
+      "level": "STK",
+      "spec": "",
+      "specDepth": "all",
+      "f": {},
+      "q": "",
+      "intLevel": "1",
+      "gridKey": "int",
+      "hidden": []
+    }
+  }
+]

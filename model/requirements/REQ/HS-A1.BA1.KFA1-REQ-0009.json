@@ -1,5 +1,5 @@
 {
-  "id": "HS-CTRL-REQ-0009",
+  "id": "HS-A1.BA1.KFA1-REQ-0009",
   "object": "requirement",
   "type": "functional",
   "title": "Outage buffering",
@@ -7,10 +7,9 @@
   "source": "System requirements review",
   "stability": "stable",
   "status": "review",
-  "priority": "should",
   "verification": "test",
   "traces": [
-    "HS-HSS-USR-0001",
-    "HS-HSS-USR-0005"
+    "HS-A1-USR-0001",
+    "HS-A1-USR-0005"
   ]
 }

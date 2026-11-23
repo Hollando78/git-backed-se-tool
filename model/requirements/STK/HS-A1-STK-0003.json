@@ -1,12 +1,11 @@
 {
-  "id": "HS-HSS-STK-0003",
+  "id": "HS-A1-STK-0003",
   "object": "requirement",
-  "type": "constraint",
+  "type": "implementation",
   "title": "Low operating burden",
   "text": "The operations team shall be able to run the monitoring fleet without adding staff.",
   "rationale": "The team has one boat crew shared with other duties.",
   "source": "Operations team",
   "stability": "stable",
-  "status": "approved",
-  "priority": "should"
+  "status": "approved"
 }

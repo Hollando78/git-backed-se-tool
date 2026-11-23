@@ -1,11 +1,10 @@
 {
-  "id": "HS-HSS-STK-0004",
+  "id": "HS-A1-STK-0004",
   "object": "requirement",
-  "type": "safety",
+  "type": "system",
   "title": "Safe coexistence with vessel traffic",
   "text": "Monitoring equipment shall not create a hazard to vessels using the harbour.",
   "source": "Harbour master",
   "stability": "stable",
-  "status": "approved",
-  "priority": "must"
+  "status": "approved"
 }

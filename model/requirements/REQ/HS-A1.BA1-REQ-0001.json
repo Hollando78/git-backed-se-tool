@@ -1,0 +1,28 @@
+{
+  "id": "HS-A1.BA1-REQ-0001",
+  "object": "requirement",
+  "type": "performance",
+  "title": "Sampling rate",
+  "text": "The buoy shall sample pH, dissolved oxygen, turbidity and temperature at least once every 10 minutes.",
+  "rationale": "Ten minutes resolves tidal-cycle variation with margin.",
+  "source": "System requirements review",
+  "stability": "stable",
+  "status": "approved",
+  "compliance": "compliant",
+  "complianceEvidence": "HS-A1.BA1-VER-0001: longest observed interval 9 min 58 s.",
+  "verification": "test",
+  "traces": [
+    "HS-A1-USR-0001",
+    "HS-A1-USR-0002"
+  ],
+  "checks": [
+    {
+      "by": "Sofia Marques",
+      "date": "2026-11-19T15:02:00Z",
+      "text": "Is 10 minutes enough to catch a discharge event?",
+      "closedBy": "Tomás Reyes",
+      "closedDate": "2026-11-20T10:30:00Z",
+      "reply": "Yes: regulator guidance treats 15 minutes as the minimum useful resolution."
+    }
+  ]
+}

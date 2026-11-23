@@ -1,5 +1,5 @@
 {
-  "id": "HS-HSS-USR-0002",
+  "id": "HS-A1-USR-0002",
   "object": "requirement",
   "type": "functional",
   "title": "Review historical trends",
@@ -8,8 +8,7 @@
   "source": "Analyst interviews",
   "stability": "stable",
   "status": "approved",
-  "priority": "should",
   "traces": [
-    "HS-HSS-STK-0001"
+    "HS-A1-STK-0001"
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "id": "HS-HSS-STK-0002",
+  "id": "HS-A1-STK-0002",
   "object": "requirement",
   "type": "functional",
   "title": "Early pollution warning",
@@ -7,6 +7,5 @@
   "rationale": "Response effectiveness drops sharply after the first hour of a spill.",
   "source": "Environmental regulator",
   "stability": "stable",
-  "status": "approved",
-  "priority": "must"
+  "status": "approved"
 }

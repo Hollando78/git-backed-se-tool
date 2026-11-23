@@ -1,5 +1,5 @@
 {
-  "id": "HS-HSS-USR-0005",
+  "id": "HS-A1-USR-0005",
   "object": "requirement",
   "type": "performance",
   "title": "Unattended operation",
@@ -7,8 +7,7 @@
   "source": "Duty officer workshop, session 2",
   "stability": "stable",
   "status": "approved",
-  "priority": "must",
   "traces": [
-    "HS-HSS-STK-0003"
+    "HS-A1-STK-0003"
   ]
 }

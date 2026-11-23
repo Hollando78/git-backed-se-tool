@@ -1,5 +1,5 @@
 {
-  "id": "HS-ALRT-REQ-0005",
+  "id": "HS-A1.KA1.KFA1-REQ-0005",
   "object": "requirement",
   "type": "functional",
   "title": "Remote threshold configuration",
@@ -8,9 +8,8 @@
   "stability": "developing",
   "stabilityRationale": "Regulator guidance on thresholds is being revised.",
   "status": "approved",
-  "priority": "should",
   "verification": "demonstration",
   "traces": [
-    "HS-HSS-USR-0004"
+    "HS-A1-USR-0004"
   ]
 }

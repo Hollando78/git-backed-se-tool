@@ -1,5 +1,5 @@
 {
-  "id": "HS-HSS-STK-0001",
+  "id": "HS-A1-STK-0001",
   "object": "requirement",
   "type": "functional",
   "title": "Continuous water-quality awareness",
@@ -7,6 +7,5 @@
   "rationale": "Manual sampling happens weekly and misses short-lived events.",
   "source": "Harbour Authority",
   "stability": "stable",
-  "status": "approved",
-  "priority": "must"
+  "status": "approved"
 }

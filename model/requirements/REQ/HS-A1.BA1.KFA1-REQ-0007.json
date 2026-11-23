@@ -1,5 +1,5 @@
 {
-  "id": "HS-CTRL-REQ-0007",
+  "id": "HS-A1.BA1.KFA1-REQ-0007",
   "object": "requirement",
   "type": "functional",
   "title": "Health telemetry",
@@ -7,9 +7,8 @@
   "source": "System requirements review",
   "stability": "stable",
   "status": "review",
-  "priority": "should",
   "verification": "test",
   "traces": [
-    "HS-HSS-USR-0006"
+    "HS-A1-USR-0006"
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "id": "HS-BUOY-REQ-0006",
+  "id": "HS-A1.BA1-REQ-0006",
   "object": "requirement",
   "type": "performance",
   "title": "Energy autonomy",
@@ -8,11 +8,17 @@
   "source": "System requirements review",
   "stability": "stable",
   "status": "approved",
-  "priority": "must",
   "compliance": "compliant",
-  "complianceEvidence": "HS-BUOY-VER-0006: minimum state of charge 31% over 90 days.",
+  "complianceEvidence": "HS-A1.BA1-VER-0006: minimum state of charge 31% over 90 days.",
   "verification": "analysis",
   "traces": [
-    "HS-HSS-USR-0005"
+    "HS-A1-USR-0005"
+  ],
+  "checks": [
+    {
+      "by": "Hannah Schmidt",
+      "date": "2026-11-21T09:14:00Z",
+      "text": "The irradiance figure needs a cited source. It currently rests on the power system assumption."
+    }
   ]
 }

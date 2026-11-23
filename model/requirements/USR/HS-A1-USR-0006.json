@@ -1,5 +1,5 @@
 {
-  "id": "HS-HSS-USR-0006",
+  "id": "HS-A1-USR-0006",
   "object": "requirement",
   "type": "functional",
   "title": "Remote health check",
@@ -9,8 +9,7 @@
   "stability": "developing",
   "stabilityRationale": "Technician role is being redefined by the operations team.",
   "status": "review",
-  "priority": "should",
   "traces": [
-    "HS-HSS-STK-0003"
+    "HS-A1-STK-0003"
   ]
 }

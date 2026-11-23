@@ -1,5 +1,5 @@
 {
-  "id": "HS-HSS-USR-0003",
+  "id": "HS-A1-USR-0003",
   "object": "requirement",
   "type": "functional",
   "title": "Receive threshold alerts",
@@ -7,8 +7,7 @@
   "source": "Duty officer workshop, session 2",
   "stability": "stable",
   "status": "approved",
-  "priority": "must",
   "traces": [
-    "HS-HSS-STK-0002"
+    "HS-A1-STK-0002"
   ]
 }

@@ -1,14 +1,13 @@
 {
-  "id": "HS-HSS-USR-0007",
+  "id": "HS-A1-USR-0007",
   "object": "requirement",
-  "type": "safety",
+  "type": "system",
   "title": "Visible to vessels",
   "text": "A vessel master shall be able to see and identify each buoy by day and by night.",
   "source": "Harbour master consultation",
   "stability": "stable",
   "status": "approved",
-  "priority": "must",
   "traces": [
-    "HS-HSS-STK-0004"
+    "HS-A1-STK-0004"
   ]
 }

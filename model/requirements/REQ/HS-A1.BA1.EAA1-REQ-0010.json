@@ -1,5 +1,5 @@
 {
-  "id": "HS-NAV-REQ-0010",
+  "id": "HS-A1.BA1.EAA1-REQ-0010",
   "object": "requirement",
   "type": "interface",
   "title": "AIS aid-to-navigation broadcast",
@@ -7,10 +7,9 @@
   "rationale": "Proposed by the harbour master; cost impact under assessment.",
   "source": "Harbour master consultation",
   "stability": "unstable",
-  "stabilityRationale": "Depends on HS-NAV-DEC-0004, which is not yet decided.",
+  "stabilityRationale": "Depends on HS-A1.BA1.EAA1-DEC-0004, which is not yet decided.",
   "status": "draft",
-  "priority": "could",
   "traces": [
-    "HS-HSS-USR-0007"
+    "HS-A1-USR-0007"
   ]
 }

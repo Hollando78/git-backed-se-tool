@@ -1,5 +1,5 @@
 {
-  "id": "HS-HSS-USR-0004",
+  "id": "HS-A1-USR-0004",
   "object": "requirement",
   "type": "functional",
   "title": "Configure alert thresholds",
@@ -8,8 +8,7 @@
   "source": "Analyst interviews",
   "stability": "stable",
   "status": "approved",
-  "priority": "should",
   "traces": [
-    "HS-HSS-STK-0002"
+    "HS-A1-STK-0002"
   ]
 }

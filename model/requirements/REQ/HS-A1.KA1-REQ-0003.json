@@ -1,5 +1,5 @@
 {
-  "id": "HS-SHORE-REQ-0003",
+  "id": "HS-A1.KA1-REQ-0003",
   "object": "requirement",
   "type": "functional",
   "title": "Data retention",
@@ -9,9 +9,8 @@
   "stability": "developing",
   "stabilityRationale": "Retention period is under legal review.",
   "status": "approved",
-  "priority": "should",
   "verification": "inspection",
   "traces": [
-    "HS-HSS-USR-0002"
+    "HS-A1-USR-0002"
   ]
 }

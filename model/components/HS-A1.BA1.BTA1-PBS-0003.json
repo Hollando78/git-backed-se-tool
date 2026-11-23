@@ -1,10 +1,11 @@
 {
-  "id": "HS-SENS-PBS-0003",
+  "id": "HS-A1.BA1.BTA1-PBS-0003",
   "title": "Sensor suite",
   "description": "pH, dissolved oxygen, turbidity and temperature probes with anti-fouling wiper.",
   "kind": "hardware",
   "status": "approved",
+  "safetyClass": "N/A",
   "owner": "Mei Lin",
   "company": "Aquasense Instruments",
-  "parent": "HS-BUOY-PBS-0002"
+  "parent": "HS-A1.BA1-PBS-0002"
 }

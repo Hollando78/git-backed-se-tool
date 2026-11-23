@@ -1,10 +1,11 @@
 {
-  "id": "HS-PWR-PBS-0005",
+  "id": "HS-A1.BA1.GBA1-PBS-0005",
   "title": "Power system",
   "description": "Solar panels, charge controller and battery pack.",
   "kind": "hardware",
   "status": "approved",
+  "safetyClass": "SC3",
   "owner": "Ingrid Solberg",
   "company": "Tidewater Systems",
-  "parent": "HS-BUOY-PBS-0002"
+  "parent": "HS-A1.BA1-PBS-0002"
 }

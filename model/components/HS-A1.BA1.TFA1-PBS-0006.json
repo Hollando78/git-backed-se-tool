@@ -1,10 +1,11 @@
 {
-  "id": "HS-COMM-PBS-0006",
+  "id": "HS-A1.BA1.TFA1-PBS-0006",
   "title": "Communications modem",
   "description": "LTE-M modem and antenna.",
   "kind": "hardware",
   "status": "approved",
+  "safetyClass": "N/A",
   "owner": "Kenji Watanabe",
   "company": "Tidewater Systems",
-  "parent": "HS-BUOY-PBS-0002"
+  "parent": "HS-A1.BA1-PBS-0002"
 }

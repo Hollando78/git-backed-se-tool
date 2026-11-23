@@ -1,10 +1,11 @@
 {
-  "id": "HS-BUOY-PBS-0002",
+  "id": "HS-A1.BA1-PBS-0002",
   "title": "Buoy",
   "description": "Moored unit deployed in the harbour.",
   "kind": "subsystem",
   "status": "approved",
+  "safetyClass": "SC2",
   "owner": "Ingrid Solberg",
   "company": "Tidewater Systems",
-  "parent": "HS-HSS-PBS-0001"
+  "parent": "HS-A1-PBS-0001"
 }

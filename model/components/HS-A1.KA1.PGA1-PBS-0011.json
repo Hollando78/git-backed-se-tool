@@ -1,0 +1,18 @@
+{
+  "id": "HS-A1.KA1.PGA1-PBS-0011",
+  "title": "Operator dashboard",
+  "description": "Web application for live readings, trends and configuration.",
+  "kind": "software",
+  "status": "proposed",
+  "safetyClass": "N/A",
+  "owner": "Luca Bianchi",
+  "company": "Tidewater Systems",
+  "parent": "HS-A1.KA1-PBS-0008",
+  "checks": [
+    {
+      "by": "Amara Okafor",
+      "date": "2026-11-22T11:40:00Z",
+      "text": "Confirm with the client that the dashboard is in our scope before this is approved."
+    }
+  ]
+}

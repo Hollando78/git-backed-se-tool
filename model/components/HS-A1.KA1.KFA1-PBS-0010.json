@@ -1,10 +1,11 @@
 {
-  "id": "HS-ALRT-PBS-0010",
+  "id": "HS-A1.KA1.KFA1-PBS-0010",
   "title": "Alerting service",
   "description": "Evaluates readings against thresholds and notifies duty officers.",
   "kind": "software",
   "status": "approved",
+  "safetyClass": "N/A",
   "owner": "Priya Nair",
   "company": "Tidewater Systems",
-  "parent": "HS-SHORE-PBS-0008"
+  "parent": "HS-A1.KA1-PBS-0008"
 }

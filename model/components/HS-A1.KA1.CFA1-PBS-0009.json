@@ -1,10 +1,11 @@
 {
-  "id": "HS-ING-PBS-0009",
+  "id": "HS-A1.KA1.CFA1-PBS-0009",
   "title": "Ingest and storage service",
   "description": "Receives readings, validates them and stores the time series.",
   "kind": "software",
   "status": "approved",
+  "safetyClass": "N/A",
   "owner": "Luca Bianchi",
   "company": "Tidewater Systems",
-  "parent": "HS-SHORE-PBS-0008"
+  "parent": "HS-A1.KA1-PBS-0008"
 }

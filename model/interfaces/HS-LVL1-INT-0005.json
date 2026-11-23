@@ -5,7 +5,7 @@
   "kind": "data",
   "from": "HS-NET-PBS-0012",
   "to": "HS-ING-PBS-0009",
-  "status": "agreed",
+  "status": "draft",
   "requirements": [
     "HS-HSS-REQ-0002"
   ]

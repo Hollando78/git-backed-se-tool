@@ -5,7 +5,7 @@
   "kind": "rf",
   "from": "HS-COMM-PBS-0006",
   "to": "HS-NET-PBS-0012",
-  "status": "agreed",
+  "status": "draft",
   "requirements": [
     "HS-HSS-REQ-0002"
   ]

@@ -25,11 +25,6 @@
     "approved",
     "obsolete"
   ],
-  "priorities": [
-    "must",
-    "should",
-    "could"
-  ],
   "verification": [
     "test",
     "analysis",
@@ -41,12 +36,12 @@
     "information"
   ],
   "reqTypes": [
+    "architecture",
+    "interface",
     "functional",
     "performance",
-    "interface",
-    "environmental",
-    "constraint",
-    "safety"
+    "system",
+    "implementation"
   ],
   "stabilities": [
     "stable",
@@ -72,5 +67,40 @@
     "Major",
     "Severe"
   ],
-  "note": "Likelihood and impact labels are placeholders until the SEMP defines them."
+  "note": "Likelihood and impact labels are placeholders until the SEMP defines them. System codes follow the ISO 81346 structure; the class letters used here are illustrative, so load the licensed RDS-PS / RDS-CW class tables into rds.classes to have them checked.",
+  "safetyClasses": [
+    "SC1",
+    "SC2",
+    "SC3",
+    "N/A"
+  ],
+  "rds": {
+    "scheme": "RDS-PS",
+    "aspect": "=",
+    "letters": [
+      1,
+      2,
+      3
+    ],
+    "classes": []
+  },
+  "interfaceTypes": {
+    "Function": [
+      "Energy",
+      "Material",
+      "Information"
+    ],
+    "Physical": [
+      "Geometry",
+      "Clearance",
+      "Load Transfer"
+    ]
+  },
+  "interfaceMaturity": [
+    "Identified",
+    "RIBA 1",
+    "RIBA 2",
+    "RIBA 3",
+    "RIBA 4"
+  ]
 }

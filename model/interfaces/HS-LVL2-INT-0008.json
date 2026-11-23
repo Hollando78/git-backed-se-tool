@@ -1,0 +1,16 @@
+{
+  "id": "HS-LVL2-INT-0008",
+  "title": "Threshold downlink",
+  "description": "Per-buoy threshold configuration pushed to the controller.",
+  "rationale": "Thresholds must change without a site visit.",
+  "kind": "Function",
+  "subtype": "Information",
+  "from": "HS-A1.KA1.KFA1-PBS-0010",
+  "to": "HS-A1.BA1.KFA1-PBS-0004",
+  "agreedFrom": "TBD",
+  "agreedTo": "TBD",
+  "maturity": "Identified",
+  "requirements": [
+    "HS-A1.KA1.KFA1-REQ-0005"
+  ]
+}

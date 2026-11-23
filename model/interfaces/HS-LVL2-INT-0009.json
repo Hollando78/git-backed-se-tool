@@ -2,11 +2,14 @@
   "id": "HS-LVL2-INT-0009",
   "title": "Operator alerts",
   "description": "On-screen and SMS notification to the duty officer.",
-  "kind": "human",
-  "from": "HS-ALRT-PBS-0010",
-  "to": "HS-DASH-PBS-0011",
-  "status": "agreed",
+  "kind": "Function",
+  "subtype": "Information",
+  "from": "HS-A1.KA1.KFA1-PBS-0010",
+  "to": "HS-A1.KA1.PGA1-PBS-0011",
+  "agreedFrom": "Yes",
+  "agreedTo": "TBD",
+  "maturity": "RIBA 2",
   "requirements": [
-    "HS-HSS-REQ-0004"
+    "HS-A1.KA1.KFA1-REQ-0005"
   ]
 }

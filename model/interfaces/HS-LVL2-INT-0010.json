@@ -2,11 +2,14 @@
   "id": "HS-LVL2-INT-0010",
   "title": "Light power and control",
   "description": "Switched 12 V feed with dusk sensor override.",
-  "kind": "power",
-  "from": "HS-CTRL-PBS-0004",
-  "to": "HS-NAV-PBS-0007",
-  "status": "draft",
+  "kind": "Function",
+  "subtype": "Energy",
+  "from": "HS-A1.BA1.KFA1-PBS-0004",
+  "to": "HS-A1.BA1.EAA1-PBS-0007",
+  "agreedFrom": "TBD",
+  "agreedTo": "TBD",
+  "maturity": "Identified",
   "requirements": [
-    "HS-NAV-REQ-0008"
+    "HS-A1.BA1.EAA1-REQ-0008"
   ]
 }

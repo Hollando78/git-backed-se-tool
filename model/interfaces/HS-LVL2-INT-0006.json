@@ -2,11 +2,14 @@
   "id": "HS-LVL2-INT-0006",
   "title": "Reading stream",
   "description": "Validated readings published to the alerting service.",
-  "kind": "data",
-  "from": "HS-ING-PBS-0009",
-  "to": "HS-ALRT-PBS-0010",
-  "status": "draft",
+  "kind": "Function",
+  "subtype": "Information",
+  "from": "HS-A1.KA1.CFA1-PBS-0009",
+  "to": "HS-A1.KA1.KFA1-PBS-0010",
+  "agreedFrom": "TBD",
+  "agreedTo": "TBD",
+  "maturity": "Identified",
   "requirements": [
-    "HS-HSS-REQ-0004"
+    "HS-A1.KA1.KFA1-REQ-0005"
   ]
 }

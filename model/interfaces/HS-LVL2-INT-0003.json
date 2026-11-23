@@ -2,11 +2,14 @@
   "id": "HS-LVL2-INT-0003",
   "title": "Power distribution",
   "description": "12 V regulated rail with battery state telemetry.",
-  "kind": "power",
-  "from": "HS-PWR-PBS-0005",
-  "to": "HS-CTRL-PBS-0004",
-  "status": "baselined",
+  "kind": "Function",
+  "subtype": "Energy",
+  "from": "HS-A1.BA1.GBA1-PBS-0005",
+  "to": "HS-A1.BA1.KFA1-PBS-0004",
+  "agreedFrom": "Yes",
+  "agreedTo": "Yes",
+  "maturity": "RIBA 3",
   "requirements": [
-    "HS-BUOY-REQ-0006"
+    "HS-A1.BA1.KFA1-REQ-0007"
   ]
 }

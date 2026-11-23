@@ -17,13 +17,14 @@
   };
 
   const APPS = [
-    { key: 'REQ', name: 'Requirements', blurb: 'What stakeholders, users and the system must do, traced level to level.' },
     { key: 'PBS', name: 'Architecture', blurb: 'Product breakdown: the systems every requirement, risk and decision belongs to.' },
-    { key: 'INT', name: 'Interfaces', blurb: 'Interface register and an N² view of what connects to what.' },
+    { key: 'INT', name: 'Interfaces', blurb: 'Interface register, by level, with an N² view of what connects to what.' },
+    { key: 'REQ', name: 'Requirements', blurb: 'What stakeholders, users and the system must do, traced level to level.' },
     { key: 'VER', name: 'Verification', blurb: 'Verification cases, their results and requirement coverage.' },
     { key: 'RSK', name: 'Risks', blurb: 'Risks per system on a likelihood × impact map, with issues lit up.' },
     { key: 'DEC', name: 'Decisions', blurb: 'Design decisions, the options weighed and what they affect.' }
   ];
+  const CATS = ['Error', 'Missing metadata', 'Checking comment', 'Traceability', 'Compliance', 'Verification', 'Interface', 'Risk', 'Other'];
   const RANK = { none: 0, read: 1, write: 2, own: 3 };
   const ACC_LABEL = { none: 'No access', read: 'Read only', write: 'Can edit', own: 'Owner' };
   const TEAM_COLORS = ['#2a7e88', '#b97612', '#6a5a9c', '#3d7a4f', '#b54848', '#4a5f6e', '#8a6d3b'];
@@ -35,7 +36,7 @@
     base: new Map(),   // id -> { path, rel, sha, data }  as committed at head
     bad: [],           // files that failed to parse
     work: new Map(),   // id -> data  (base + staged edits)
-    view: 'hub', level: '', q: '', f: {}, spec: '', specDepth: 'all', zoom: 1, grid: ls.get('se.grid', {}), colsOpen: false, lastGrid: null, sel: null, hist: {}, loading: '', error: '', committing: false
+    view: 'hub', level: '', q: '', f: {}, spec: '', specDepth: 'all', zoom: 1, grid: ls.get('se.grid', {}), colsOpen: false, lastGrid: null, sel: null, dialog: null, stamp: null, frozen: null, exports: [], exportsSha: null, intLevel: '', mdim: 'system', hist: {}, loading: '', error: '', committing: false
   };
 
   /* ---------------- GitHub ---------------- */
@@ -57,7 +58,7 @@
   const R = () => `/repos/${encodeURIComponent(S.owner)}/${encodeURIComponent(S.repo)}`;
   const encRef = b => b.split('/').map(encodeURIComponent).join('/');
   const webUrl = () => `https://github.com/${encodeURIComponent(S.owner)}/${encodeURIComponent(S.repo)}`;
-  const canPush = () => !!(S.token && S.repoInfo && S.repoInfo.permissions && S.repoInfo.permissions.push);
+  const canPush = () => !S.frozen && !!(S.token && S.repoInfo && S.repoInfo.permissions && S.repoInfo.permissions.push);
 
   /* Reading the model. One file per item means dozens of files, so avoid one API call each:
      - with a token: a single GraphQL query returns every file's text;
@@ -156,16 +157,32 @@
       readModel(ref.object.sha),
       gh(`${R()}/commits?sha=${encodeURIComponent(branch)}&path=${encodeURIComponent(S.root)}&per_page=30`).catch(() => [])
     ]);
-    const readJson = name => {
+    ingest(all, true);
+    S.frozen = null; S.stamp = null;
+    S.commits = commits; S.hist = {};
+    const draft = ls.get(draftKey(), {});
+    for (const id in draft) draft[id] === null ? S.work.delete(id) : S.work.set(id, draft[id]);
+    S.loading = '';
+    fixView();
+    render();
+  }
+
+  /* Turn the files of one commit into the in-memory model. */
+  function ingest(all, live) {
+    const readJson = (name, dflt) => {
       const f = all.find(x => x.rel === name);
-      if (!f) return {};
-      try { return JSON.parse(f.text); } catch { toast(name + ' is not valid JSON; using defaults.', true); return {}; }
+      if (!f) return dflt;
+      try { return JSON.parse(f.text); } catch { toast(name + ' is not valid JSON; using defaults.', true); return dflt; }
     };
-    S.project = M.project(readJson('project.json'));
-    const team = readJson('team.json');
+    S.project = M.project(readJson('project.json', {}));
+    const team = readJson('team.json', {});
     S.team = { teams: team.teams || [], users: team.users || [], domain: team.domain || 'example.invalid' };
     if (!S.team.users.some(u => u.login === S.persona)) S.persona = '';
-    S.commits = commits; S.hist = {};
+    if (live) {   // the export register always reflects the branch tip, never an old baseline
+      const reg = readJson('exports/register.json', []);
+      S.exports = Array.isArray(reg) ? reg : [];
+      S.exportsSha = all.find(x => x.rel === 'exports/register.json')?.sha || null;
+    }
     S.base = new Map(); S.bad = [];
     all.filter(f => M.isItemPath(f.rel, S.project)).forEach(f => {
       const entry = { path: `${S.root}/${f.rel}`, rel: f.rel, sha: f.sha, data: null };
@@ -174,11 +191,23 @@
       else S.bad.push(entry);
     });
     S.work = new Map([...S.base].map(([id, e]) => [id, clone(e.data)]));
-    const draft = ls.get(draftKey(), {});
-    for (const id in draft) draft[id] === null ? S.work.delete(id) : S.work.set(id, draft[id]);
-    S.loading = '';
-    fixView();
-    render();
+  }
+  /* Re-open a recorded export exactly as it was: same commit, same view, read-only. */
+  async function openBaseline(entry) {
+    S.dialog = null; S.sel = null; S.loading = `Loading baseline v${entry.version}…`; render(); renderDrawer();
+    ingest(await readModel(entry.commit), false);
+    const v = entry.view || {};
+    Object.assign(S, { frozen: entry, view: v.view || 'hub', level: v.level || '', spec: v.spec || '', specDepth: v.specDepth || 'all', f: v.f || {}, q: v.q || '', intLevel: v.intLevel || '', loading: '' });
+    if (v.gridKey) S.grid[v.gridKey] = { hidden: v.hidden, sort: v.sort };
+    fixView(); render();
+  }
+  const b64 = str => { let bin = ''; new TextEncoder().encode(str).forEach(b => { bin += String.fromCharCode(b); }); return btoa(bin); };
+  async function saveRegister(list, message) {
+    const p = me(), body = { message, content: b64(JSON.stringify(list, null, 2) + '\n'), branch: S.branch };
+    if (S.exportsSha) body.sha = S.exportsSha;
+    if (p) body.author = { name: p.name, email: `${p.login}@${S.team.domain}` };
+    const r = await gh(`${R()}/contents/${encRef(S.root + '/exports/register.json')}`, { method: 'PUT', body });
+    S.exports = list; S.exportsSha = r.content.sha;
   }
 
   function signOut() {
@@ -206,6 +235,14 @@
   const appAcc = k => appAreas(k).map(acc).sort((a, b) => RANK[b] - RANK[a])[0];
   const canSee = id => RANK[acc(M.areaOf(id, S.project))] >= 1;
   const canEdit = id => canPush() && RANK[acc(M.areaOf(id, S.project))] >= 2;
+  const CHECKED = ['REQ', 'PBS'];   // types that carry checking comments
+  const canComment = id => canPush() && canSee(id) && CHECKED.includes(T(id));
+  const sansChecks = d => { const o = clone(d); delete o.checks; return o; };
+  /* A change is refused unless the person may edit the item, or it only adds or closes checking comments. */
+  const refused = c => !canEdit(c.id) && !(c.type === 'mod' && canComment(c.id) && ser(sansChecks(c.data)) === ser(sansChecks(c.before)));
+  const whoAmI = () => me()?.name || S.user?.login || 'unknown';
+  const openChecks = d => (d.checks || []).filter(c => !c.closedBy);
+  const checkText = d => { const all = d.checks || [], o = openChecks(d), l = o[o.length - 1]; return o.length ? `${o.length} open · ${l.by}, ${String(l.date).slice(0, 10)}: ${l.text}` : all.length ? `${all.length} closed` : ''; };
   const canEditPrefix = p => canEdit(p + '-000');
 
   /* ---------------- model helpers ---------------- */
@@ -270,7 +307,7 @@
     const ch = changes();
     if (!ch.length) return;
     const p = me();
-    const denied = ch.filter(c => !canEdit(c.id)).map(c => c.id);
+    const denied = ch.filter(refused).map(c => c.id);
     if (denied.length) throw new Error(`${p ? p.name : 'You'} cannot change ${denied.join(', ')}. Discard those edits or switch person.`);
     S.committing = true; render();
     try {
@@ -423,7 +460,26 @@
     </div>`;
   }
 
+  /* What the current page is as a document: used for baselines, file names and print stamps. */
+  function docInfo() {
+    const app = S.view.slice(4), a = APPS.find(x => x.key === app) || { name: S.view };
+    const what = app === 'REQ' ? `${level(S.level)?.name || ''} requirements` : app === 'INT' && S.intLevel ? `Interfaces, level ${S.intLevel}` : a.name;
+    const scope = S.spec && S.work.has(S.spec) ? `${M.sysOf(S.spec)} ${get(S.spec).title}${String(S.specDepth) === '0' ? '' : ' and below'}` : 'all systems';
+    return { app, system: S.spec ? M.sysOf(S.spec) : 'ALL', title: `${S.project.name}: ${what}, ${scope}`,
+      key: [app, app === 'REQ' ? S.level : app === 'INT' ? 'L' + (S.intLevel || 'all') : '', S.spec ? M.sysOf(S.spec) + '/' + S.specDepth : 'ALL'].filter(Boolean).join(':') };
+  }
+  function stampHtml() {
+    const e = S.frozen || S.stamp, repo = `${esc(S.owner)}/${esc(S.repo)}`;
+    return e && !e.draft
+      ? `<b>${esc(e.title)}</b> · <b>Baseline v${esc(e.version)}</b> (${esc(e.type)}) · exported by ${esc(e.by)}, ${esc(when(e.date))} · ${repo} @ ${esc(e.commit.slice(0, 7))}${e.description ? ' · ' + esc(e.description) : ''}`
+      : `<b>${esc(docInfo().title)}</b> · <b>UNCONTROLLED DRAFT</b>, not a baseline · ${repo} @ ${esc(S.head.sha.slice(0, 7))} · ${esc(when(new Date().toISOString()))}`;
+  }
   function mainView(iss, ch, p) {
+    if (S.frozen) { const e = S.frozen; return `<div class="banner frozen"><div><b>Baseline v${esc(e.version)}</b> (${esc(e.type)}) of ${esc(e.title)}<br>As exported by ${esc(e.by)} on ${esc(when(e.date))}, at commit <span class="mono">${esc(e.commit.slice(0, 7))}</span>${e.description ? ': ' + esc(e.description) : ''}. Read-only.</div>
+      <span style="flex:1"></span><button class="btn" data-act="print">Print / PDF this baseline</button><button class="btn ghost" data-act="reload">Back to current</button></div>` + mainView2(iss, ch, p); }
+    return mainView2(iss, ch, p);
+  }
+  function mainView2(iss, ch, p) {
     const top = (title, sub, right = '') => `<div class="topbar"><div><h1>${esc(title)}</h1>${sub ? `<div class="sub">${sub}</div>` : ''}</div><div class="spacer"></div>${right}
       ${ch.length && S.view !== 'changes' ? `<button class="btn amber" data-act="view" data-view="changes">Review ${plural(ch.length, 'change')}</button>` : ''}</div>`;
     const ro = canPush() ? '' : `<div class="banner">${S.token ? 'Your GitHub account cannot push to this repository, so everything is read-only.' : 'Browsing without a token: everything is read-only.'}</div>`;
@@ -437,8 +493,8 @@
     if (S.view === 'changes') return top('Changes', `Staged edits on <span class="mono">${esc(S.branch)}</span>, kept in this browser until committed.`) + ro + changesView(ch, iss, p);
     if (S.view === 'history') return top('History', `Commits touching <span class="mono">${esc(S.root)}/</span> on <span class="mono">${esc(S.branch)}</span>.`) + `<div class="card">${commitList(S.commits) || '<div class="empty">No commits found.</div>'}</div>`;
     const a = APPS.find(x => x.key === app);
-    const right = { REQ: () => newBtn(S.level, S.level) + (S.level === leaf() ? newBtn('ASS', 'assumption') : ''), PBS: () => newBtn('PBS', 'system'), INT: () => newBtn('INT', 'interface'), VER: () => newBtn('VER', 'case'), RSK: () => newBtn('RSK', 'risk'), DEC: () => newBtn('DEC', 'decision') }[app]();
-    const printHead = `<div class="print-head"><b>${esc(S.project.name)}</b> · ${esc(a.name)} · ${esc(S.owner)}/${esc(S.repo)} @ ${esc(S.head.sha.slice(0, 7))} (${esc(S.branch)}) · ${esc(when(new Date().toISOString()))}</div>`;
+    const right = { REQ: () => newBtn(S.level, 'requirement') + (S.level === leaf() ? newBtn('ASS', 'assumption') : ''), PBS: () => newBtn('PBS', 'system'), INT: () => newBtn('INT', 'interface'), VER: () => newBtn('VER', 'case'), RSK: () => newBtn('RSK', 'risk'), DEC: () => newBtn('DEC', 'decision') }[app]();
+    const printHead = `<div class="print-head">${stampHtml()}</div>`;
     return printHead + top(a.name, esc(a.blurb), right) + ro + accNote + appViews[app](iss, ch);
   }
 
@@ -452,7 +508,7 @@
     }
     const list = idsOf(k), n = v => list.filter(id => v(get(id))).length;
     if (k === 'PBS') return [plural(list.length, 'system'), `${n(d => d.status === 'approved')} approved, ${n(d => d.status !== 'approved')} proposed`];
-    if (k === 'INT') return [plural(list.length, 'interface'), `${n(d => d.status === 'baselined')} baselined, ${n(d => d.status === 'draft')} draft`];
+    if (k === 'INT') return [plural(list.length, 'interface'), `${n(d => d.agreedFrom === 'Yes' && d.agreedTo === 'Yes')} agreed by both systems, ${n(d => d.maturity === S.project.interfaceMaturity[0])} only identified`];
     if (k === 'VER') return [plural(list.length, 'case'), `${n(d => d.result === 'passed')} passed, ${n(d => d.result === 'failed')} failed`];
     if (k === 'RSK') return [`${n(d => d.status !== 'closed')} active risks`, `${n(d => d.status === 'impacting')} impacting (issues), ${n(d => d.status !== 'closed' && d.likelihood * d.impact >= 12)} high`];
     return [plural(list.length, 'decision'), `${n(d => d.status === 'proposed')} awaiting a decision`];
@@ -499,48 +555,6 @@
     }).join('');
   }
 
-  /* ---------------- item rows ---------------- */
-  function row(id, iss, ch, depth = 0) {
-    const gone = !S.work.has(id);
-    const d = gone ? S.base.get(id).data : get(id);
-    const c = ch.find(x => x.id === id), mine = iss.filter(i => i.id === id), t = T(id);
-    let body = '', links = '', side = '';
-    if (t === 'REQ') {
-      const l = level(P(id)), child = childLevel(l.key), kids = gone ? [] : childrenOf(id);
-      body = d.text;
-      links = (l.parent ? `↑ ${refText(d.traces || []) || '<span class="amber">no parent</span>'}<br>` : '') +
-        (child ? `↓ ${kids.length ? kids.length + ' ' + esc(child.key) : '<span class="amber">not covered</span>'}` : (d.verification ? 'verify: ' + esc(d.verification) : ''));
-      side = st(d.status) + `<span class="muted">${esc(d.priority)}</span>`;
-    } else if (t === 'PBS') {
-      body = d.description;
-      links = `${homed(id, leaf()).length} requirements<br>${idsOf('INT').filter(i => get(i).from === id || get(i).to === id).length} interfaces`;
-      side = chip('', d.kind);
-    } else if (t === 'INT') {
-      body = d.description; links = `${refText([d.from])} → ${refText([d.to])}<br>${refText(d.requirements || [])}`;
-      side = st(d.status) + `<span class="muted">${esc(d.kind)}</span>`;
-    } else if (t === 'VER') {
-      body = d.procedure; links = `verifies ${refText(d.verifies || []) || '<span class="amber">nothing</span>'}`;
-      side = st(d.result) + `<span class="muted">${esc(d.method)}</span>`;
-    } else if (t === 'RSK') {
-      body = d.cause; links = `L${esc(d.likelihood)} × I${esc(d.impact)} = <b>${d.likelihood * d.impact}</b><br>${esc(d.owner || '')}`;
-      side = st(d.status);
-    } else {
-      body = d.decision || d.context; links = `affects ${refText(d.affects || [])}`; side = st(d.status);
-    }
-    return `<button class="req ${c ? 'changed' : ''} ${gone ? 'gone' : ''} ${S.sel?.id === id ? 'sel' : ''}" data-act="open" data-id="${esc(id)}">
-      <span class="ref" style="padding-left:${depth * 14}px">${depth ? '└ ' : ''}${esc(id)}</span>
-      <span><div class="req-title">${esc(d.title)}</div><div class="req-text">${esc(body)}</div></span>
-      <span class="req-links">${links}</span>
-      <span class="req-side">${side}${c ? chip(c.type, { add: 'new', mod: 'edited', del: 'deleted' }[c.type]) : ''}${mine.length ? chip(mine[0].severity, plural(mine.length, mine[0].severity === 'error' ? 'error' : 'warning')) : ''}</span>
-    </button>`;
-  }
-  function listOf(prefix, iss, ch, { filter, sort } = {}) {
-    const deleted = ch.filter(c => c.type === 'del' && P(c.id) === prefix && canSee(c.id)).map(c => c.id);
-    let list = [...idsOf(prefix), ...deleted].sort().filter(id => { const d = get(id) || S.base.get(id).data; return match(id, d) && (!filter || filter(d)); });
-    if (sort) list = list.sort(sort);
-    return `<div class="reqs">${list.map(id => row(id, iss, ch)).join('') || `<div class="empty">${S.q ? 'Nothing matches the search.' : 'Nothing here yet.'}</div>`}</div>`;
-  }
-
   /* ---------------- product breakdown helpers ---------------- */
   const cmpKids = id => idsOf('PBS').filter(c => get(c).parent === id);
   /* Depth-first list of visible components: [{ id, depth }] */
@@ -560,20 +574,35 @@
   const rolled = (id, prefix = leaf()) => new Set(subtree(id, 'all').flatMap(e => homed(e.id, prefix)));
 
   /* ---------------- grid: spreadsheet-style table with column chooser, sort and export ---------------- */
+  const checkCol = () => ({ k: '_checks', label: 'Checking', w: 200, check: true, get: (id, d) => checkText(d) });
   function reqCols(lvl) {
-    const off = ['object', 'rationale', 'stabilityRationale', 'complianceRationale', 'complianceEvidence', 'priority'];
-    const wide = { title: 160, text: 320, rationale: 240, source: 150, stabilityRationale: 220, complianceRationale: 240, complianceEvidence: 220 };
+    const off = ['object', 'rationale', 'stabilityRationale', 'complianceRationale', 'complianceEvidence'];
+    const wide = { title: 130, text: 240, rationale: 200, source: 120, stabilityRationale: 180, complianceRationale: 180, complianceEvidence: 180 };
     const cols = [{ k: 'id', label: 'ID' }, { k: '_sys', label: 'System', get: id => sysLabel(id) }];
     M.fields(lvl + '-000', S.project).forEach(f => cols.push({ k: f.k, label: f.k === 'traces' ? 'Traces to' : f.label, w: wide[f.k], off: off.includes(f.k),
       dot: f.k === 'status', rag: f.rag, get: (id, d) => f.type === 'links' ? refText(d[f.k] || []) : show(d[f.k]) }));
     if (lvl === leaf() && RANK[acc('verification')] >= 1) cols.push({ k: '_cases', label: 'Verified by', off: true, get: id => linking('VER', 'verifies', id).join(', ') });
+    cols.push(checkCol());
     return cols;
   }
+  /* Columns straight from a type's schema, for the simpler registers. */
+  function fieldCols(code, off = [], wide = {}) {
+    const cols = [{ k: 'id', label: 'ID' }];
+    if (code !== 'INT') cols.push({ k: '_sys', label: 'System', get: id => sysLabel(id) });
+    M.fields(code + '-000', S.project).forEach(f => cols.push({ k: f.k, label: f.short || f.label.replace(/ \(.*\)$/, ''), w: wide[f.k] || (f.type === 'area' ? 200 : f.type === 'text' ? 150 : 0), off: off.includes(f.k),
+      dot: ['status', 'result'].includes(f.k), get: (id, d) => f.type === 'links' ? refText(d[f.k] || []) : f.type === 'link' ? (S.work.has(d[f.k]) && canSee(d[f.k]) ? `${M.sysOf(d[f.k])} · ${get(d[f.k]).title}` : refText([d[f.k]].filter(Boolean))) : show(d[f.k]) }));
+    return cols;
+  }
+  const rds = id => S.project.rds.aspect + M.sysOf(id);
+  const depthOf = id => M.sysOf(id).split('.').length - 1;
   const cmpCols = () => [
     { k: 'id', label: 'ID' },
-    { k: 'title', label: 'System name', w: 220, tree: true, get: (id, d) => d.title },
+    { k: '_rds', label: `${S.project.rds.scheme} code`, get: id => rds(id) },
+    { k: 'title', label: 'System name', w: 200, tree: true, get: (id, d) => d.title },
+    { k: '_level', label: 'Level', get: id => 'L' + depthOf(id) },
     { k: 'kind', label: 'Kind', get: (id, d) => d.kind },
     { k: 'status', label: 'Control status', dot: true, get: (id, d) => d.status || '' },
+    { k: 'safetyClass', label: 'Safety class', get: (id, d) => d.safetyClass || '' },
     { k: 'owner', label: 'System owner', get: (id, d) => d.owner || '' },
     { k: 'company', label: 'Owner company', get: (id, d) => d.company || '' },
     { k: 'parent', label: 'Part of', get: (id, d) => d.parent || '' },
@@ -581,6 +610,7 @@
     { k: '_all', label: 'Incl. levels below', get: id => S.work.has(id) ? rolled(id).size : '' },
     { k: '_if', label: 'Interfaces', get: id => idsOf('INT').filter(i => get(i).from === id || get(i).to === id).length },
     ...(RANK[acc('risks')] >= 1 ? [{ k: '_rsk', label: 'Active risks', get: id => homed(id, 'RSK').filter(r => get(r).status !== 'closed').length }] : []),
+    checkCol(),
     { k: 'description', label: 'Description', w: 280, off: true, get: (id, d) => d.description || '' }
   ];
   const rskCols = () => {
@@ -640,40 +670,90 @@
       const c = cols.find(x => x.k === g.sort.k);
       if (c) rows = rows.slice().sort((a, b) => g.sort.dir * String(cellOf(c, a.id, data(a.id))).localeCompare(String(cellOf(c, b.id, data(b.id))), undefined, { numeric: true }));
     }
-    S.lastGrid = { cols, rows, name };
+    S.lastGrid = { cols, rows, name, key };
     const items = rows.filter(r => !r.group);
     const body = rows.map(r => {
       if (r.group) { const e = get(r.el); return `<tr class="grp"><td colspan="${vis.length}"><span style="padding-left:${r.depth * 16}px"></span><span class="lvl">${r.depth ? 'n+' + r.depth : 'n'}</span>
         <button class="linkish dark mono" data-act="open" data-id="${esc(r.el)}">${esc(M.sysOf(r.el))}</button> <b>${esc(e.title)}</b>${e.company ? ` · ${esc(e.company)}` : ''} <span class="muted">· ${plural(r.n, 'item')}</span></td></tr>`; }
       const d = data(r.id), gone = !S.work.has(r.id), c = ch.find(x => x.id === r.id), mine = iss.filter(i => i.id === r.id);
-      return `<tr class="${c ? 'changed' : ''} ${gone ? 'gone' : ''}" data-act="open" data-id="${esc(r.id)}" tabindex="0">${vis.map(col => {
-        if (col.k === 'id') return `<th scope="row"><span class="ref">${esc(r.id)}</span>${c ? chip(c.type, { add: 'new', mod: 'edited', del: 'deleted' }[c.type]) : ''}${mine.length ? chip(mine[0].severity, mine.length + (mine[0].severity === 'error' ? ' err' : ' warn')) : ''}</th>`;
+      return `<tr class="${c ? 'changed' : ''} ${gone ? 'gone' : ''} ${M.codeOf(r.id) === 'ASS' ? 'ass' : ''}" data-act="open" data-id="${esc(r.id)}" tabindex="0">${vis.map(col => {
+        if (col.k === 'id') return `<th scope="row"><span class="ref">${esc(r.id)}</span>${M.codeOf(r.id) === 'ASS' ? chip('asm', 'assumption') : ''}${c ? chip(c.type, { add: 'new', mod: 'edited', del: 'deleted' }[c.type]) : ''}${mine.length ? chip(mine[0].severity, mine.length + (mine[0].severity === 'error' ? ' err' : ' warn')) : ''}</th>`;
         const v = cellOf(col, r.id, d);
+        if (col.check) { const o = openChecks(d).length; return `<td>${o ? chip('warn', o + ' open') + ' ' : ''}${esc(o ? v.replace(/^\d+ open · /, '') : v)}</td>`; }
         return `<td class="${col.w ? '' : 'nw'}" ${col.tree && !g.sort ? `style="padding-left:${9 + (r.depth || 0) * 16}px"` : ''}>${col.rag ? rag(col.k, v) : (col.dot && v ? dot(v) : '') + (col.tree ? `<b>${esc(v)}</b>` : esc(v))}</td>`;
       }).join('')}</tr>`;
     }).join('');
     return `<div class="grid-bar"><span class="n">${plural(items.length, 'row')}${grouped ? ` in ${plural(rows.length - items.length, 'system')}` : ''} · ${vis.length} of ${cols.length} columns</span>
         <details class="cols" ${S.colsOpen ? 'open' : ''}><summary class="btn ghost">Columns</summary><div class="cols-menu">
+          <div class="cols-top"><button type="button" class="btn ghost" data-act="colsAll" data-grid="${esc(key)}">Show all</button><button type="button" class="btn ghost" data-act="colsReset" data-grid="${esc(key)}">Default</button></div>
           ${cols.filter(c => c.k !== 'id').map(c => `<label><input type="checkbox" data-change="col" data-grid="${esc(key)}" data-k="${esc(c.k)}" ${colHidden(key, c) ? '' : 'checked'}> ${esc(c.label)}</label>`).join('')}</div></details>
-        <button class="btn ghost" data-act="csv">Export CSV</button><button class="btn ghost" data-act="print">Print / PDF</button></div>
+        ${S.frozen ? '' : `<button class="btn ghost" data-act="export" data-format="csv">Export CSV</button><button class="btn ghost" data-act="export" data-format="pdf">Print / PDF</button>`}
+        <button class="btn ghost" data-act="baselines">Baselines${S.exports.filter(e => e.app === S.view.slice(4)).length ? ` (${S.exports.filter(e => e.app === S.view.slice(4)).length})` : ''}</button></div>
       <div class="grid-wrap"><table class="sheet"><thead><tr>${vis.map(c => `<th ${c.w ? `style="min-width:${c.w}px"` : ''}>${grouped ? esc(c.label)
         : `<button data-act="sort" data-grid="${esc(key)}" data-k="${esc(c.k)}">${esc(c.label)}${g.sort?.k === c.k ? (g.sort.dir > 0 ? ' ▲' : ' ▼') : ''}</button>`}</th>`).join('')}</tr></thead>
         <tbody>${body || `<tr class="none"><td colspan="${vis.length}">${S.q || Object.values(S.f).some(Boolean) ? 'Nothing matches the search and filters.' : 'Nothing here yet.'}</td></tr>`}</tbody></table></div>`;
   }
   /* Every column, not only the visible ones; the rows are whatever the table currently shows. */
-  function exportCsv() {
+  function exportCsv(stamp) {
     if (!S.lastGrid) return;
-    const { cols, rows, name } = S.lastGrid, grouped = rows.some(r => r.group);
+    const { cols, rows, name } = S.lastGrid;
     // A leading quote stops spreadsheet apps from running a cell as a formula.
     const cell = v => { v = String(v ?? ''); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    const head = cols.map(c => c.label);
-    const lines = [head, ...rows.filter(r => !r.group).map(r => { const d = get(r.id) || S.base.get(r.id).data; return cols.map(c => cellOf(c, r.id, d)); })];
+    const repo = `${S.owner}/${S.repo}`;
+    const top = stamp.draft
+      ? [['UNCONTROLLED – INFORMATION ONLY'], [stamp.title], [`DRAFT, not a baseline · ${repo} @ ${S.head.sha.slice(0, 7)} · ${new Date().toISOString()}`]]
+      : [['UNCONTROLLED – INFORMATION ONLY'], [stamp.title], [`Baseline v${stamp.version} (${stamp.type}) · exported by ${stamp.by} on ${stamp.date} · ${repo} @ ${stamp.commit.slice(0, 7)}`], ...(stamp.description ? [[stamp.description]] : [])];
+    const lines = [...top, [], cols.map(c => c.label), ...rows.filter(r => !r.group).map(r => { const d = get(r.id) || S.base.get(r.id).data; return cols.map(c => cellOf(c, r.id, d)); })];
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(['﻿' + lines.map(l => l.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
-    a.download = `${S.project.name}-${name}-${S.head.sha.slice(0, 7)}.csv`.replace(/[^\w.-]+/g, '-');
+    a.download = `${S.project.name}-${name}-${stamp.draft ? 'draft' : 'v' + stamp.version}.csv`.replace(/[^\w.-]+/g, '-');
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    toast(`Exported ${plural(lines.length - 1, 'row')} to ${a.download}.`);
+  }
+  /* Why an export cannot be recorded as a baseline right now ('' if it can). */
+  const draftReason = () => S.frozen ? 'you are viewing an old baseline' : !canPush() ? 'you cannot write to the repository' : changes().length ? 'there are staged changes that are not committed yet' : '';
+  function nextVersion(key, type) {
+    const last = S.exports.filter(e => e.doc === key).pop(), [maj, min] = last ? last.version.split('.').map(Number) : [0, 0];
+    return type === 'major' ? `${maj + 1}.0` : `${maj}.${min + 1}`;
+  }
+  async function doExport(format, type, description) {
+    const doc = docInfo();
+    let stamp = { draft: true, title: doc.title };
+    if (!draftReason()) {
+      const g = S.lastGrid || {};
+      stamp = { doc: doc.key, title: doc.title, app: doc.app, system: doc.system, version: nextVersion(doc.key, type), type, description, format, by: whoAmI(),
+        date: new Date().toISOString(), commit: S.head.sha, branch: S.branch,
+        view: { view: S.view, level: S.level, spec: S.spec, specDepth: S.specDepth, f: S.f, q: S.q, intLevel: S.intLevel, gridKey: g.key, hidden: S.grid[g.key]?.hidden, sort: S.grid[g.key]?.sort } };
+      await saveRegister([...S.exports, stamp], `Record baseline v${stamp.version} of ${doc.title}`);
+      toast(`Recorded baseline v${stamp.version} (${type}).`);
+    }
+    S.stamp = stamp; S.dialog = null; render(); renderDrawer();
+    if (format === 'csv') exportCsv(stamp);
+    else setTimeout(() => window.print(), 50);
+  }
+  function dialogHtml() {
+    const d = S.dialog, doc = docInfo();
+    if (d.kind === 'export') {
+      const why = draftReason();
+      return `<div class="scrim" data-act="closeDialog"></div><form class="modal" data-submit="export" role="dialog" aria-label="Export">
+        <h2>${d.format === 'csv' ? 'Export CSV' : 'Print / PDF'}</h2><div class="muted">${esc(doc.title)}</div>
+        ${why ? `<div class="banner">This will be an <b>uncontrolled draft</b>, not a recorded baseline, because ${esc(why)}.</div>` : `
+        <div class="field"><span>Baseline</span>
+          <label class="radio"><input type="radio" name="type" value="minor" checked><span><b>Minor</b> · becomes v${esc(nextVersion(doc.key, 'minor'))}</span></label>
+          <label class="radio"><input type="radio" name="type" value="major"><span><b>Major</b> · becomes v${esc(nextVersion(doc.key, 'major'))}</span></label></div>
+        <label class="field"><span>Description (optional)</span><textarea name="description" placeholder="Why this export was issued, and to whom"></textarea></label>
+        <div class="help">The baseline is recorded in <span class="mono">${esc(S.root)}/exports/register.json</span> against commit <span class="mono">${esc(S.head.sha.slice(0, 7))}</span>, so the same document can be reproduced later.${d.format === 'pdf' ? ' The print dialog opens next: choose “Save as PDF”.' : ''}</div>`}
+        <input type="hidden" name="format" value="${esc(d.format)}">
+        <div class="modal-foot"><button class="btn" type="submit">${why ? 'Export draft' : 'Record baseline and export'}</button><button type="button" class="btn ghost" data-act="closeDialog">Cancel</button></div></form>`;
+    }
+    const list = S.exports.map((e, i) => ({ e, i })).filter(x => x.e.app === doc.app).reverse(), systems = [...new Set(list.map(x => x.e.system))].sort();
+    return `<div class="scrim" data-act="closeDialog"></div><div class="modal wide" role="dialog" aria-label="Baselines">
+      <h2>Baselines: ${esc(APPS.find(a => a.key === doc.app)?.name || '')}</h2><div class="muted">Every recorded export of this data type, by system. Open one to see and re-export exactly what was issued.</div>
+      ${systems.map(sys => `<div class="section-lbl" style="margin-top:14px">${sys === 'ALL' ? 'All systems' : esc(sys) + (sysEl(sys) ? ' · ' + esc(get(sysEl(sys)).title) : '')}</div>
+        ${list.filter(x => x.e.system === sys).map(({ e, i }) => `<div class="baseline"><span class="rag t-${e.type === 'major' ? 'green' : 'grey'}">v${esc(e.version)}</span>
+          <div><b>${esc(e.title)}</b><div class="muted">${esc(e.type)} · ${esc(String(e.format).toUpperCase())} · ${esc(e.by)} · ${esc(when(e.date))} · commit <span class="mono">${esc(e.commit.slice(0, 7))}</span>${e.description ? '<br>' + esc(e.description) : ''}</div></div>
+          <button class="btn ghost" data-act="openBaseline" data-i="${i}">Open to re-export</button></div>`).join('')}`).join('') || '<div class="empty">Nothing has been exported as a baseline yet.</div>'}
+      <div class="modal-foot"><button type="button" class="btn ghost" data-act="closeDialog">Close</button></div></div>`;
   }
 
   /* ---------------- apps ---------------- */
@@ -715,12 +795,20 @@
         <div class="legend"><span>${dot('approved')}approved: controlled, risks may be raised against it</span><span>${dot('proposed')}proposed</span></div>`;
     },
     INT(iss, ch) {
-      const ifs = idsOf('INT'), comps = idsOf('PBS').filter(c => ifs.some(i => get(i).from === c || get(i).to === c));
-      const n2 = comps.length ? `<div class="card" style="margin-bottom:16px"><h3>N² view</h3><div class="muted" style="margin-bottom:10px">Components on the diagonal. An interface sits in the row of its source and the column of its destination.</div>
+      const all = idsOf('INT'), lvOf = i => M.sysOf(i).replace('LVL', '');
+      const levels = [...new Set([...idsOf('PBS').map(depthOf).filter(d => d > 0).map(String), ...all.map(lvOf)])].sort();
+      if (!levels.includes(S.intLevel)) S.intLevel = '';
+      const ifs = all.filter(i => !S.intLevel || lvOf(i) === S.intLevel);
+      const comps = idsOf('PBS').filter(c => S.intLevel ? String(depthOf(c)) === S.intLevel : ifs.some(i => get(i).from === c || get(i).to === c));
+      const n2 = comps.length ? `<div class="card" style="margin-bottom:16px"><h3>N² view${S.intLevel ? `: every system at level ${esc(S.intLevel)}` : ''}</h3><div class="muted" style="margin-bottom:10px">Systems on the diagonal. An interface sits in the row of System A and the column of System B.${S.intLevel ? ' Empty cells are pairs with no interface identified.' : ' Pick a level to see every system at that level, including those with no interfaces yet.'}</div>
         <div class="scroll"><table class="n2">${comps.map(r => `<tr>${comps.map(c => r === c
-          ? `<th><button class="linkish dark" data-act="open" data-id="${esc(r)}"><span class="mono">${esc(r)}</span><br>${esc(get(r).title)}</button></th>`
-          : `<td>${ifs.filter(i => get(i).from === r && get(i).to === c).map(refbtn).join('')}</td>`).join('')}</tr>`).join('')}</table></div></div>` : '';
-      return n2 + `<div class="tools">${search('interfaces')}</div>${listOf('INT', iss, ch)}${legend(['draft', 'agreed', 'baselined'])}`;
+          ? `<th><button class="linkish dark" data-act="open" data-id="${esc(r)}"><span class="mono">${esc(rds(r))}</span><br>${esc(get(r).title)}</button></th>`
+          : `<td>${ifs.filter(i => get(i).from === r && get(i).to === c).map(i => `<button type="button" class="refbtn" data-act="open" data-id="${esc(i)}" title="${esc(get(i).title)}">${esc(i.split('-').slice(-2).join('-'))}</button>`).join('')}</td>`).join('')}</tr>`).join('')}</table></div></div>` : '';
+      const rows = ifs.filter(i => match(i, get(i))).map(id => ({ id }));
+      return `<div class="tabs"><button data-act="intLevel" data-l="" class="${S.intLevel ? '' : 'on'}">All levels <span class="count">${all.length}</span></button>
+          ${levels.map(l => `<button data-act="intLevel" data-l="${esc(l)}" class="${S.intLevel === l ? 'on' : ''}"><span class="mono">LVL${esc(l)}</span> <span class="count">${all.filter(i => lvOf(i) === l).length}</span></button>`).join('')}</div>
+        ${n2}<div class="tools">${search('interfaces: any attribute')}</div>
+        ${grid('int', fieldCols('INT', ['description', 'rationale'], { title: 150 }), rows, iss, ch, `interfaces${S.intLevel ? '-LVL' + S.intLevel : ''}`)}`;
     },
     VER(iss, ch) {
       const list = idsOf('VER'), sys = idsOf(leaf()).filter(id => get(id).status !== 'obsolete');
@@ -732,7 +820,8 @@
           <div class="card kpi"><div class="num">${pct(pass.length, sys.length)}</div><div class="lbl">verified: all cases passed (${pass.length}/${sys.length})</div></div>` : ''}
         </div>
         ${un.length ? `<div class="card" style="margin-bottom:16px"><div class="section-lbl" style="margin-bottom:6px">${esc(leaf())} requirements with no case</div>${un.map(refbtn).join('')}</div>` : ''}
-        <div class="tools">${search('verification cases')}</div>${listOf('VER', iss, ch)}${legend(['planned', 'blocked', 'passed', 'failed'])}`;
+        <div class="tools">${search('verification cases: any attribute')}</div>
+        ${grid('ver', fieldCols('VER', ['notes'], { title: 160 }), idsOf('VER').filter(i => match(i, get(i))).map(id => ({ id })), iss, ch, 'verification')}${legend(['planned', 'blocked', 'passed', 'failed'])}`;
     },
     RSK(iss, ch) {
       const LL = S.project.likelihoodLabels, IL = S.project.impactLabels;
@@ -741,7 +830,7 @@
       const rows = scopedRows('RSK', id => match(id, data(id)), ch, (a, b) => score(b) - score(a) || a.localeCompare(b));
       const scope = S.spec ? subtree(S.spec, S.specDepth).flatMap(e => homed(e.id, 'RSK')) : idsOf('RSK');
       const live = scope.filter(id => get(id).status !== 'closed'), hot = live.filter(id => get(id).status === 'impacting');
-      const pin = id => `<button type="button" class="refbtn ${get(id).status === 'impacting' ? 'hot' : ''}" data-act="open" data-id="${esc(id)}" title="${esc(get(id).title)}${get(id).status === 'impacting' ? ' (impacting: now an issue)' : ''}">${esc(shortId(id))}</button>`;
+      const pin = id => `<button type="button" class="refbtn ${get(id).status === 'impacting' ? 'hot' : ''}" data-act="open" data-id="${esc(id)}" title="${esc(id)} · ${esc(get(id).title)}${get(id).status === 'impacting' ? ' (impacting: now an issue)' : ''}">${esc(id.split('-').slice(-2).join('-'))}</button>`;
       const cell = (l, i) => { const s = l * i; return `<td class="${s >= 12 ? 'hi' : s >= 6 ? 'mid' : 'lo'}">${live.filter(id => get(id).likelihood === l && get(id).impact === i).map(pin).join('')}</td>`; };
       return bar + `<div class="card" style="margin-bottom:16px"><h3>Risk map: ${S.spec ? esc(get(S.spec).title) + (String(S.specDepth) === '0' ? '' : ' and the levels shown below it') : 'all systems'}</h3>
           <div class="muted" style="margin-bottom:10px">${plural(live.length, 'active risk')}${hot.length ? `, of which <b style="color:var(--red)">${hot.length} impacting</b> (now ${hot.length === 1 ? 'an issue' : 'issues'})` : ''}. Closed risks stay in the table below.</div>
@@ -752,7 +841,10 @@
         <div class="tools">${search('risks: any attribute')}</div>
         ${grid('rsk', rskCols(), rows, iss, ch, `risks${S.spec ? '-' + M.sysOf(S.spec) : ''}`)}${legend(['open', 'mitigating', 'accepted', 'impacting', 'closed'])}`;
     },
-    DEC(iss, ch) { return `<div class="tools">${search('decisions')}</div>${listOf('DEC', iss, ch)}${legend(['proposed', 'accepted', 'superseded'])}`; }
+    DEC(iss, ch) {
+      return `<div class="tools">${search('decisions: any attribute')}</div>
+        ${grid('dec', fieldCols('DEC', ['options'], { title: 170 }), idsOf('DEC').filter(i => match(i, get(i))).map(id => ({ id })), iss, ch, 'decisions')}${legend(['proposed', 'accepted', 'superseded'])}`;
+    }
   };
 
   /* ---------------- trace ---------------- */
@@ -800,38 +892,60 @@
   /* ---------------- metrics ---------------- */
   function metricsView() {
     const lv = visLevels(), all = lv.flatMap(l => idsOf(l.key));
-    const real = all.filter(id => get(id).object === 'requirement' && get(id).status !== 'obsolete'), ass = all.filter(id => M.codeOf(id) === 'ASS');
-    const lower = real.filter(id => level(P(id)).parent), lf = real.filter(id => P(id) === leaf());
+    const isReq = id => get(id).object === 'requirement' && get(id).status !== 'obsolete';
+    const real = all.filter(isReq), ass = all.filter(id => M.codeOf(id) === 'ASS'), lf = real.filter(id => P(id) === leaf());
+    const traced = ids => { const lower = ids.filter(id => isReq(id) && level(P(id)).parent); return [lower.filter(id => (get(id).traces || []).length).length, lower.length]; };
     const seeVer = RANK[acc('verification')] >= 1, seeRsk = RANK[acc('risks')] >= 1;
     const verified = ids => ids.filter(id => { const v = linking('VER', 'verifies', id); return v.length && v.every(x => get(x).result === 'passed'); }).length;
     const risks = seeRsk ? idsOf('RSK').filter(id => get(id).status !== 'closed') : [];
     const kpi = (num, lbl) => `<div class="card kpi"><div class="num">${esc(num)}</div><div class="lbl">${esc(lbl)}</div></div>`;
-    const order = pbsOrder();
+    const order = pbsOrder(), pbsAll = [...S.work.keys()].filter(x => M.codeOf(x) === 'PBS');
+    const ownerOf = id => { for (let c = M.sysOf(id); c; c = c.includes('.') ? c.slice(0, c.lastIndexOf('.')) : '') { const e = pbsAll.find(x => M.sysOf(x) === c); if (e && get(e).owner) return get(e).owner; } return 'Unassigned'; };
+    const DIMS = [['system', 'Each system'], ['cumulative', 'System of systems (cumulative)'], ['archlevel', 'Architecture level'], ['reqlevel', 'Requirement level'], ['owner', 'System owner']];
+    if (!order.length && ['system', 'cumulative'].includes(S.mdim)) S.mdim = 'reqlevel';
+    let groups;   // [{ label (html), ids }]
+    if (S.mdim === 'system' || S.mdim === 'cumulative') groups = order.map(e => {
+      const codes = S.mdim === 'system' ? [M.sysOf(e.id)] : subtree(e.id, 'all').map(x => M.sysOf(x.id));
+      return { label: `<span style="padding-left:${e.depth * 16}px"></span><button class="linkish dark" data-act="spec" data-id="${esc(e.id)}"><span class="mono">${esc(rds(e.id))}</span> ${esc(get(e.id).title)}</button>`, ids: all.filter(id => codes.includes(M.sysOf(id))) };
+    });
+    else if (S.mdim === 'reqlevel') groups = lv.map(l => ({ label: `<span class="mono">${esc(l.key)}</span> ${esc(l.name)}`, ids: idsOf(l.key) }));
+    else if (S.mdim === 'archlevel') groups = [...new Set(all.map(id => M.sysOf(id).split('.').length - 1))].sort().map(d => ({ label: `Level ${d}`, ids: all.filter(id => M.sysOf(id).split('.').length - 1 === d) }));
+    else groups = [...new Set(all.map(ownerOf))].sort().map(o => { const u = S.team.users.find(x => x.name === o); return { label: `${u ? avatar(u, 20) + ' ' : ''}${esc(o)}`, ids: all.filter(id => ownerOf(id) === o) }; });
+    const methods = S.project.verification;
+    const row = g => {
+      const reqs = g.ids.filter(isReq), [t, tn] = traced(g.ids), obj = {};
+      g.ids.forEach(id => { const o = get(id).object || 'not set'; obj[o] = (obj[o] || 0) + 1; });
+      const vm = methods.map(m => [m, reqs.filter(id => get(id).verification === m).length]).filter(x => x[1]), none = reqs.filter(id => !get(id).verification).length;
+      return `<tr><th>${g.label}</th><td><b>${reqs.length}</b></td><td class="small">${Object.entries(obj).map(([o, n]) => `${n} ${esc(o)}`).join('<br>') || '–'}</td>
+        <td>${ragBar(g.ids, 'stability')}</td><td>${ragBar(reqs, 'compliance')}</td><td>${tn ? `${t}/${tn} <span class="muted">(${pct(t, tn)})</span>` : '–'}</td>
+        <td class="small">${vm.map(([m, n]) => `${n} ${esc(m)}`).join('<br>')}${none ? `${vm.length ? '<br>' : ''}<span class="amber">${none} not set</span>` : ''}${!vm.length && !none ? '–' : ''}</td></tr>`;
+    };
     return `<div class="grid kpis">
         ${kpi(real.length, 'requirements')}${kpi(ass.length, 'assumptions')}
-        ${kpi(pct(lower.filter(id => (get(id).traces || []).length).length, lower.length), 'traced upward')}
+        ${kpi(pct(...traced(all)), 'traced to a parent')}
         ${seeVer ? kpi(pct(verified(lf), lf.length), `${leaf()} verified (all cases passed)`) : ''}
         ${seeRsk ? kpi(risks.length, 'active risks') + kpi(risks.filter(id => get(id).status === 'impacting').length, 'impacting (issues)') : ''}
       </div>
-      <div class="card" style="margin-bottom:16px"><h3>RAG status by requirement level</h3>
-        <div class="scroll"><table class="metrics"><tr><th>Level</th><th>Items</th><th>Stability</th><th>Compliance</th></tr>
-        ${lv.map(l => { const ids = idsOf(l.key); return `<tr><th><span class="mono">${esc(l.key)}</span> ${esc(l.name)}</th><td>${ids.length}</td><td>${ragBar(ids, 'stability')}</td><td>${ragBar(ids, 'compliance')}</td></tr>`; }).join('')}</table></div>
-        <div class="legend"><span><span class="dot t-green"></span>${esc(S.project.stabilities[0])} / ${esc(S.project.compliances[0])}</span><span><span class="dot t-amber"></span>${esc(S.project.stabilities[1])} / ${esc(S.project.compliances[1])}</span><span><span class="dot t-red"></span>${esc(S.project.stabilities[2])} / ${esc(S.project.compliances[2])}</span><span><span class="dot" style="background:var(--light)"></span>not set</span></div></div>
-      ${order.length ? `<div class="card"><h3>RAG status by system</h3><div class="muted" style="margin-bottom:10px">Each row counts the system and everything below it in the breakdown, so the top row is the whole project. Click a system to open its requirements.</div>
-        <div class="scroll"><table class="metrics"><tr><th>System</th><th>${esc(leaf())}</th><th>Assumptions</th><th>Stability</th><th>Compliance</th>${seeVer ? '<th>Verified</th>' : ''}${seeRsk ? '<th>Active risks</th><th>Issues</th>' : ''}</tr>
-        ${order.map(e => {
-          const items = [...rolled(e.id)], reqs = items.filter(id => get(id).object === 'requirement' && get(id).status !== 'obsolete');
-          const rk = seeRsk ? [...rolled(e.id, 'RSK')].filter(id => get(id).status !== 'closed') : [], hot = rk.filter(id => get(id).status === 'impacting').length;
-          return `<tr><th style="padding-left:${8 + e.depth * 16}px"><button class="linkish dark" data-act="spec" data-id="${esc(e.id)}"><span class="mono">${esc(M.sysOf(e.id))}</span> ${esc(get(e.id).title)}</button></th>
-            <td>${reqs.length}</td><td>${items.filter(id => M.codeOf(id) === 'ASS').length}</td><td>${ragBar(items, 'stability')}</td><td>${ragBar(reqs, 'compliance')}</td>
-            ${seeVer ? `<td>${reqs.length ? `${verified(reqs)}/${reqs.length}` : '–'}</td>` : ''}${seeRsk ? `<td>${rk.length}</td><td>${hot ? `<span class="rag t-red">${hot}</span>` : '0'}</td>` : ''}</tr>`;
-        }).join('')}</table></div></div>` : ''}`;
+      <div class="tabs">${DIMS.filter(([k]) => order.length || !['system', 'cumulative'].includes(k)).map(([k, t]) => `<button data-act="mdim" data-d="${k}" class="${S.mdim === k ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>
+      <div class="card"><div class="muted" style="margin-bottom:10px">${{ system: 'Each row counts only what belongs to that system.', cumulative: 'Each row counts the system and everything below it, so the top row is the whole project.', archlevel: 'Grouped by the breakdown level of the system each item belongs to.', reqlevel: 'Grouped by requirement level.', owner: 'Grouped by the owner of the system each item belongs to; an unowned system rolls up to its parent’s owner.' }[S.mdim]}</div>
+        <div class="scroll"><table class="metrics"><tr><th>${esc(DIMS.find(d => d[0] === S.mdim)[1])}</th><th>Requirements</th><th>Object types</th><th>Stability</th><th>Compliance</th><th>Traced to a parent</th><th>Verification method</th></tr>
+        ${groups.map(row).join('')}</table></div>
+        <div class="legend"><span><span class="dot t-green"></span>${esc(S.project.stabilities[0])} / ${esc(S.project.compliances[0])}</span><span><span class="dot t-amber"></span>${esc(S.project.stabilities[1])} / ${esc(S.project.compliances[1])}</span><span><span class="dot t-red"></span>${esc(S.project.stabilities[2])} / ${esc(S.project.compliances[2])}</span><span><span class="dot" style="background:#cfc7b4"></span>not set</span></div></div>`;
   }
 
   /* ---------------- validation / team / changes ---------------- */
   function validationView(iss) {
-    if (!iss.length) return `<div class="card empty">No issues in the parts of the model you can see.</div>`;
-    return `<div class="reqs">${iss.map(i => `<button class="issue" data-act="open" data-id="${esc(i.id)}">${chip(i.severity, i.severity === 'warn' ? 'warning' : 'error')}<span class="ref">${esc(i.id)}</span><span>${esc(i.message)}</span></button>`).join('')}</div>`;
+    if (!iss.length) return `<div class="card empty">No validation tasks in the parts of the model you can see.</div>`;
+    const owners = [...new Set(iss.map(i => i.owner))].map(o => ({ o, list: iss.filter(i => i.owner === o) })).sort((a, b) => b.list.length - a.list.length);
+    const used = CATS.filter(c => iss.some(i => i.cat === c)), max = owners[0].list.length;
+    const who = o => { const u = S.team.users.find(x => x.name === o); return `${u ? avatar(u, 22) + ' ' : ''}<b>${esc(o)}</b>`; };
+    return `<div class="card" style="margin-bottom:16px"><h3>Tasks by owner and type</h3>
+        <div class="muted" style="margin-bottom:10px">Each task goes to the owner of the system its item belongs to. Where a system has no owner, the task goes up to its parent’s owner and finally to the top-level system owner.</div>
+        ${owners.map(({ o, list }) => `<div class="vbar"><a href="#own-${esc(encodeURIComponent(o))}" class="vbar-who">${who(o)}</a>
+          <div class="vbar-track"><div class="vbar-fill" style="width:${100 * list.length / max}%">${used.map(c => { const n = list.filter(i => i.cat === c).length; return n ? `<i class="cat-${CATS.indexOf(c)}" style="flex:${n}" title="${esc(c)}: ${n}">${n}</i>` : ''; }).join('')}</div></div><span class="vbar-n">${list.length}</span></div>`).join('')}
+        <div class="legend">${used.map(c => `<span><span class="dot cat-${CATS.indexOf(c)}"></span>${esc(c)}</span>`).join('')}</div></div>
+      ${owners.map(({ o, list }) => `<div class="vsec" id="own-${esc(encodeURIComponent(o))}"><h3>${who(o)} <span class="muted">· ${plural(list.length, 'task')}</span></h3>
+        <div class="reqs">${list.map(i => `<button class="issue" data-act="open" data-id="${esc(i.id)}"><span class="chip cat cat-${CATS.indexOf(i.cat)}">${esc(i.cat)}</span><span class="ref">${esc(i.id)}</span><span>${esc(i.message)}</span></button>`).join('')}</div></div>`).join('')}`;
   }
 
   function teamView(p) {
@@ -852,7 +966,7 @@
   function changesView(ch, iss, p) {
     if (!ch.length) return `<div class="card empty">No staged changes. Open an item, edit it and choose “Stage change”.</div>`;
     const errs = iss.filter(i => i.severity === 'error').length;
-    const denied = ch.filter(c => !canEdit(c.id)).map(c => c.id);
+    const denied = ch.filter(refused).map(c => c.id);
     const verb = { add: 'Add', mod: 'Update', del: 'Remove' };
     const msg = ['add', 'mod', 'del'].map(t => { const ids = ch.filter(c => c.type === t).map(c => c.id); return ids.length ? `${verb[t]} ${ids.join(', ')}` : ''; }).filter(Boolean).join('; ');
     const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
@@ -863,7 +977,7 @@
           const a = show(c.before?.[f.k]), b = show(c.data?.[f.k]);
           if (String(a) === String(b) || (c.type === 'del' && f.k !== 'title')) return '';
           return `<dt>${esc(f.k)}</dt><dd>${a !== '' ? `<del>${esc(a)}</del> ` : ''}${b !== '' ? `<ins>${esc(b)}</ins>` : ''}</dd>`;
-        }).join('')}</dl></div>`).join('')}</div>
+        }).join('')}${c.type === 'mod' && JSON.stringify(c.before.checks || []) !== JSON.stringify(c.data.checks || []) ? `<dt>checking</dt><dd><ins>${esc(checkText(c.data) || 'comments changed')}</ins></dd>` : ''}</dl></div>`).join('')}</div>
       <form class="card commit-box" data-submit="commit" style="margin-top:16px">
         <h3 style="margin:0">Commit${p ? ` as ${esc(p.name)}` : ''}</h3>
         ${p ? `<div class="help">Git author: ${esc(p.name)} &lt;${esc(p.login)}@${esc(S.team.domain)}&gt; (simulated). Committer: ${esc(S.user?.login || 'you')}.</div>` : ''}
@@ -896,6 +1010,8 @@
     if (f.type === 'text') return `<label class="field"><span>${esc(f.label)}</span><input name="${name}" ${f.req ? 'required' : ''} value="${esc(v)}" ${dis}></label>`;
     if (f.type === 'area') return `<label class="field">${lbl}<textarea name="${name}" ${f.req ? 'required' : ''} ${dis}>${esc(v)}</textarea></label>`;
     if (f.type === 'num') return `<label class="field half">${lbl}<select name="${name}" ${dis}>${[1, 2, 3, 4, 5].map(o => `<option value="${o}" ${o === v ? 'selected' : ''}>${o}${f.labels ? ' · ' + esc(f.labels[o - 1] || '') : ''}</option>`).join('')}</select></label>`;
+    if (f.groups && f.k === 'kind') return '';   // derived from the sub-type
+    if (f.groups) return `<label class="field"><span>Interface type and sub-type</span><select name="${name}" ${dis}>${Object.entries(f.groups).map(([g, list]) => `<optgroup label="${esc(g)}">${list.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</optgroup>`).join('')}</select></label>`;
     if (f.type === 'select') return `<label class="field half">${lbl}<select name="${name}" ${dis}>${f.req ? '' : '<option value="">–</option>'}${f.opts.map(o => `<option ${String(o) === String(v) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></label>`;
     const cands = f.to.flatMap(idsOf);
     if (f.type === 'link') {
@@ -907,11 +1023,21 @@
       ${hidden.map(t => `<input type="hidden" name="${name}" value="${esc(t)}">`).join('')}
       ${hidden.length ? `<div class="muted" style="padding:5px 10px;font-size:12px">${plural(hidden.length, 'restricted link')} kept as is.</div>` : ''}
       ${missing.map(t => `<label><input type="checkbox" name="${name}" value="${esc(t)}" checked ${dis}><span class="ref" style="color:var(--red)">${esc(t)}</span><span>does not exist</span></label>`).join('')}
-      ${cands.map(c => `<label><input type="checkbox" name="${name}" value="${esc(c)}" ${cur.includes(c) ? 'checked' : ''} ${dis}><span class="ref">${esc(c)}</span><span>${esc(get(c).title)}</span></label>`).join('') || (hidden.length || missing.length ? '' : '<div class="muted" style="padding:6px 10px">Nothing to link to yet.</div>')}
+      ${cands.map(c => `<label data-sys="${esc(M.sysOf(c))}"><input type="checkbox" name="${name}" value="${esc(c)}" ${cur.includes(c) ? 'checked' : ''} ${dis}><span class="ref">${esc(c)}</span><span>${esc(get(c).title)}</span></label>`).join('') || (hidden.length || missing.length ? '' : '<div class="muted" style="padding:6px 10px">Nothing to link to yet.</div>')}
     </div></div>`;
+  }
+  /* Interface form rules: System B must be at System A's level, and only their requirements can be linked. */
+  function intSync(form) {
+    if (!form || !form.from) return;
+    const a = form.from.value, lvl = a ? depthOf(a) : null;
+    [...form.to.options].forEach(o => { o.disabled = !!o.value && (o.value === a || (lvl != null && depthOf(o.value) !== lvl)); });
+    if (form.to.selectedOptions[0]?.disabled) form.to.value = [...form.to.options].find(o => !o.disabled && o.value)?.value || '';
+    const ok = [a, form.to.value].filter(Boolean).map(x => M.sysOf(x));
+    $$('label[data-sys]', form).forEach(l => { const show = ok.includes(l.dataset.sys); l.hidden = !show; if (!show) l.querySelector('input').checked = false; });
   }
   function renderDrawer() {
     const el = $('#drawer');
+    if (S.dialog && S.repoInfo) { el.innerHTML = dialogHtml(); return; }
     if (!S.sel || !S.repoInfo) { el.innerHTML = ''; return; }
     const { id, isNew } = S.sel;
     const gone = !isNew && !S.work.has(id);
@@ -921,11 +1047,14 @@
     const typeName = code === 'ASS' ? 'Assumption' : t === 'REQ' ? `${level(P(id)).name} requirement` : M.TYPES[t]?.name || 'Item';
     const allPbs = [...S.work.keys()].filter(x => M.codeOf(x) === 'PBS').sort();
     const sysPick = !isNew ? `<div class="help">System: ${elOf(id) && id !== elOf(id) ? refbtn(elOf(id)) : ''} <b>${esc(code === 'INT' ? M.sysOf(id).replace('LVL', 'breakdown level ') : sysLabel(id))}</b></div>`
-      : code === 'PBS' ? `<label class="field"><span>System code (becomes part of every ID for this system; cannot be changed later)</span><input name="_code" required placeholder="e.g. BUOY" maxlength="8" spellcheck="false" style="text-transform:uppercase"></label>`
-      : code === 'INT' ? `<div class="help">The ID will carry the breakdown level at which the two systems meet.</div>`
+      : code === 'PBS' ? `<label class="field"><span>${esc(S.project.rds.scheme)} designation for this level (cannot be changed later)</span><input name="_code" required placeholder="e.g. KFA2" maxlength="8" spellcheck="false" style="text-transform:uppercase"></label>
+        <div class="help">ISO 81346 structure: ${S.project.rds.letters.map((n, i) => `level ${i}: ${n} class letter${n > 1 ? 's' : ''}`).join(', ')}, each followed by a number. The full code is the parent’s code plus this designation, and becomes part of every ID for this system.</div>`
+      : code === 'INT' ? `<div class="help">An interface joins two systems at the same level; the ID carries that level.</div>`
       : `<label class="field"><span>System (part of the ID; cannot be changed later)</span><select name="_sys" required>${allPbs.filter(x => code !== 'RSK' || get(x).status === 'approved').map(x => `<option value="${esc(M.sysOf(x))}" ${x === S.spec ? 'selected' : ''}>${esc(M.sysOf(x))}${canSee(x) ? ' · ' + esc(get(x).title) : ''}</option>`).join('')}</select></label>
         ${code === 'RSK' ? '<div class="help">Only approved systems are listed. Raise a risk at the lowest system it applies to; if it spans several sub-systems, raise it once against their parent.</div>' : ''}`;
     const edit = canEdit(id) && !gone;
+    const comment = !isNew && !gone && canComment(id), who = whoAmI();
+    const checks = CHECKED.includes(t) && !isNew ? (d.checks || []) : null;
     const dis = edit ? '' : 'disabled';
     const changed = isNew || changes().some(c => c.id === id);
     const mine = isNew ? [] : issues().filter(i => i.id === id);
@@ -940,17 +1069,25 @@
           ${mine.map(i => `<div class="mini-issue ${i.severity}">${esc(i.message)}</div>`).join('')}
           ${sysPick}
           <div class="fields">${M.fields(id, S.project).map(f => fieldHtml(f, d, dis)).join('')}</div>
+          ${checks ? `<div class="checking"><div class="section-lbl" style="margin-bottom:6px">Checking</div>
+            ${checks.map((c, i) => `<div class="check ${c.closedBy ? 'closed' : ''}"><div class="check-meta"><b>${esc(c.by)}</b> · ${esc(when(c.date))}${c.closedBy ? ` · closed by ${esc(c.closedBy)}, ${esc(when(c.closedDate))}` : ''}</div>
+              <div>${esc(c.text)}</div>${c.reply ? `<div class="muted">Close-out: ${esc(c.reply)}</div>` : ''}
+              ${!c.closedBy && comment ? `<label class="checkline"><input type="checkbox" name="_close" value="${i}"> Close this comment</label>` : ''}</div>`).join('') || '<div class="muted" style="font-size:12.5px">No checking comments.</div>'}
+            ${comment ? `${checks.some(c => !c.closedBy) ? `<input name="_reply" placeholder="Close-out note for the comments ticked above (optional)" class="inline-input" style="width:100%">` : ''}
+              <textarea name="_check" placeholder="Add a checking comment. It will be stamped ${esc(who)}, ${esc(when(new Date().toISOString()))}." style="width:100%;margin-top:6px;min-height:56px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px"></textarea>` : ''}
+          </div>` : ''}
           ${!isNew ? `<div><div class="section-lbl" style="margin-bottom:6px">Referenced by</div>${back.map(refbtn).join('') || '<span class="muted" style="font-size:12.5px">Nothing links to this yet.</span>'}</div>` : ''}
           ${b ? `<div><div class="section-lbl" style="margin-bottom:2px">File history</div><div class="mono muted" style="font-size:10.5px;overflow-wrap:anywhere">${esc(b.path)}</div><div id="hist">${S.hist[b.path] ? commitList(S.hist[b.path]) : '<span class="muted" style="font-size:12px">Loading…</span>'}</div></div>` : ''}
         </div>
         <div class="drawer-foot">
-          ${edit ? `<button class="btn" type="submit">${isNew ? 'Stage new item' : 'Stage change'}</button>` : ''}
+          ${edit || comment ? `<button class="btn" type="submit">${isNew ? 'Stage new item' : edit ? 'Stage change' : 'Stage comment'}</button>` : ''}
           ${!isNew && changed && canPush() ? `<button type="button" class="btn ghost" data-act="unstage" data-id="${esc(id)}">${gone ? 'Restore' : 'Discard edits'}</button>` : ''}
           ${edit && !isNew ? `<button type="button" class="btn danger" data-act="delete" data-id="${esc(id)}">Delete</button>` : ''}
           ${b ? `<a class="btn ghost" style="margin-left:auto;text-decoration:none" href="${webUrl()}/blob/${encRef(S.branch)}/${encRef(b.path)}" target="_blank" rel="noopener">View file</a>` : ''}
         </div>
       </form>`;
     if (isNew) $('[name=title]', el)?.focus();
+    if (code === 'INT') intSync($('form', el));
   }
 
   /* ---------------- actions ---------------- */
@@ -967,7 +1104,7 @@
   }
 
   const actions = {
-    view(t) { S.view = t.dataset.view; S.sel = null; S.q = ''; S.f = {}; S.colsOpen = false; fixView(); renderDrawer(); render(); window.scrollTo(0, 0); },
+    view(t) { S.view = t.dataset.view; S.stamp = null; S.sel = null; S.q = ''; S.f = {}; S.colsOpen = false; fixView(); renderDrawer(); render(); window.scrollTo(0, 0); },
     level(t) { S.level = t.dataset.level; S.q = ''; S.f = {}; render(); },
     sort(t) {
       const g = S.grid[t.dataset.grid] = S.grid[t.dataset.grid] || {}, k = t.dataset.k;
@@ -981,8 +1118,15 @@
       S.view = 'app:REQ'; S.level = leaf(); S.q = ''; S.f = {}; S.sel = null; renderDrawer(); render(); window.scrollTo(0, 0);
     },
     zoom(t) { S.zoom = +t.dataset.z; render(); },
-    csv() { exportCsv(); },
     print() { window.print(); },
+    export(t) { S.dialog = { kind: 'export', format: t.dataset.format }; renderDrawer(); },
+    baselines() { S.dialog = { kind: 'baselines' }; renderDrawer(); },
+    closeDialog() { S.dialog = null; renderDrawer(); },
+    openBaseline(t) { run(openBaseline(S.exports[+t.dataset.i])); },
+    intLevel(t) { S.intLevel = t.dataset.l; S.q = ''; render(); },
+    mdim(t) { S.mdim = t.dataset.d; render(); },
+    colsAll(t) { (S.grid[t.dataset.grid] = S.grid[t.dataset.grid] || {}).hidden = []; S.colsOpen = true; ls.set('se.grid', S.grid); render(); },
+    colsReset(t) { delete (S.grid[t.dataset.grid] || {}).hidden; S.colsOpen = true; ls.set('se.grid', S.grid); render(); },
     open(t) { openReq(t.dataset.id); },
     close() { S.sel = null; renderDrawer(); $$('.req.sel').forEach(n => n.classList.remove('sel')); },
     persona(t) { setPersona(t.dataset.login); },
@@ -1009,6 +1153,7 @@
   };
 
   const submits = {
+    export(f) { run(doExport(f.format.value, f.type ? f.type.value : '', f.description ? f.description.value.trim() : '')); },
     connect(f) {
       S.token = f.token.value.trim();
       saveToken(S.token, f.remember.checked);
@@ -1022,20 +1167,29 @@
       if (isNew) {   // the real ID is coined now, from the chosen system
         let sys;
         if (code === 'PBS') {
-          sys = f._code.value.trim().toUpperCase();
-          if (!/^[A-Z][A-Z0-9]{1,7}$/.test(sys) || /^LVL\d+$/.test(sys)) { toast('System code: 2 to 8 letters or digits, starting with a letter.', true); return; }
-          if ([...S.work.keys(), ...S.base.keys()].some(x => M.codeOf(x) === 'PBS' && M.sysOf(x) === sys)) { toast(`System code ${sys} is already in use.`, true); return; }
-        } else if (code === 'INT') sys = 'LVL' + intLevel(f.from.value, f.to.value);
+          const seg = f._code.value.trim().toUpperCase(), par = f.parent.value, depth = par ? depthOf(par) + 1 : 0, n = S.project.rds.letters[Math.min(depth, S.project.rds.letters.length - 1)];
+          if (!new RegExp(`^[A-Z]{${n}}[1-9]\\d*$`).test(seg)) { toast(`A level ${depth} designation is ${n} class letter${n > 1 ? 's' : ''} followed by a number, for example ${'ABC'.slice(0, n)}1.`, true); return; }
+          sys = par ? `${M.sysOf(par)}.${seg}` : seg;
+          if ([...S.work.keys(), ...S.base.keys()].some(x => M.codeOf(x) === 'PBS' && M.sysOf(x) === sys)) { toast(`${S.project.rds.aspect}${sys} is already in use.`, true); return; }
+        } else if (code === 'INT') {
+          if (!f.from.value || !f.to.value || depthOf(f.from.value) !== depthOf(f.to.value)) { toast('Choose two systems at the same architectural level.', true); return; }
+          sys = 'LVL' + depthOf(f.from.value);
+        }
         else sys = f._sys.value;
         if (!sys) { toast('Choose the system this belongs to.', true); return; }
         id = M.makeId(S.project, sys, code, nextNum(code));
       }
       const data = isNew ? {} : clone(get(id));
       data.id = id;
-      M.fields(fake, S.project).forEach(fd => {
+      if (isNew || canEdit(id)) M.fields(fake, S.project).forEach(fd => {
         if (fd.type === 'links') data[fd.k] = $$(`input[name="${fd.k}"]`, f).filter(i => i.type === 'hidden' || i.checked).map(i => i.value);
         else if (f[fd.k]) data[fd.k] = fd.type === 'num' ? Number(f[fd.k].value) : f[fd.k].value.trim();
       });
+      if (code === 'INT') data.kind = Object.keys(S.project.interfaceTypes).find(g => S.project.interfaceTypes[g].includes(data.subtype)) || data.kind;
+      // checking comments are stamped with who and when, and are never edited afterwards
+      const now = new Date().toISOString();
+      $$('[name=_close]:checked', f).forEach(i => { const c = data.checks[+i.value]; c.closedBy = whoAmI(); c.closedDate = now; if (f._reply?.value.trim()) c.reply = f._reply.value.trim(); });
+      if (f._check?.value.trim()) (data.checks = data.checks || []).push({ by: whoAmI(), date: now, text: f._check.value.trim() });
       S.work.set(id, data); saveDraft();
       S.sel = null; render(); renderDrawer();
       toast(changes().some(c => c.id === id) ? `${id} staged. Commit it from Changes.` : `${id} matches the committed version.`);
@@ -1066,6 +1220,7 @@
     if (k === 'filter') { S.f[e.target.dataset.f] = e.target.value; render(); }
     if (k === 'spec') { S.spec = e.target.value; render(); }
     if (k === 'specDepth') { S.specDepth = e.target.value; render(); }
+    if (['from', 'to'].includes(e.target.name) && e.target.closest('.drawer')) intSync(e.target.form);
     if (k === 'col') {
       const key = e.target.dataset.grid, g = S.grid[key] = S.grid[key] || {};
       const hidden = new Set(S.lastGrid.cols.filter(c => colHidden(key, c)).map(c => c.k));
@@ -1077,7 +1232,8 @@
   document.addEventListener('mouseover', e => { if (S.view === 'trace') highlight(e.target.closest('[data-node]')?.dataset.node || null); });
   document.addEventListener('focusin', e => { if (S.view === 'trace' && e.target.dataset?.node) highlight(e.target.dataset.node); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && S.sel) actions.close();
+    if (e.key === 'Escape' && S.dialog) actions.closeDialog();
+    else if (e.key === 'Escape' && S.sel) actions.close();
     if (e.key === 'Enter' && e.target.matches('tr[data-act]')) e.target.click();
   });
   window.addEventListener('resize', () => { if (S.view === 'trace') drawTrace(); });

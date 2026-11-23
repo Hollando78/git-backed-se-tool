@@ -9,6 +9,7 @@ const M = require('../app/model.js');
 
 const root = process.argv[2] || 'model';
 const SKIP = new Set(['project.json', 'team.json']);
+const SKIP_DIR = new Set(['exports']);
 
 let project = {};
 try { project = JSON.parse(fs.readFileSync(path.join(root, 'project.json'), 'utf8')); }
@@ -21,7 +22,7 @@ let unformatted = 0;
   for (const name of fs.existsSync(dir) ? fs.readdirSync(dir).sort() : []) {
     const full = path.join(dir, name);
     const rel = path.relative(root, full).split(path.sep).join('/');
-    if (fs.statSync(full).isDirectory()) { walk(full); continue; }
+    if (fs.statSync(full).isDirectory()) { if (!SKIP_DIR.has(rel)) walk(full); continue; }
     if (!name.endsWith('.json') || SKIP.has(rel)) continue;
     const raw = fs.readFileSync(full, 'utf8');
     const entry = { path: rel, data: null };
@@ -35,7 +36,7 @@ let unformatted = 0;
 })(root);
 
 const issues = M.validate(project, entries);
-for (const i of issues) console.log(`${i.severity.padEnd(6)} ${i.id}: ${i.message}`);
+for (const i of issues) console.log(`${i.severity.padEnd(6)} ${i.id}: ${i.message}  [${i.owner}]`);
 const errors = issues.filter(i => i.severity === 'error').length;
 console.log(`\n${entries.length} items, ${errors} errors, ${issues.length - errors + unformatted} warnings`);
 process.exit(errors ? 1 : 0);

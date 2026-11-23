@@ -95,28 +95,34 @@ in the URL preselects a repository; on GitHub Pages the repository is inferred f
 
 ## ID coding and files
 
-Every item ID is `<PROJECT>-<SYSTEM>-<TYPE>-<NNNN>`, for example `HS-BUOY-REQ-0006`:
+Every item ID is `<PROJECT>-<SYSTEM>-<TYPE>-<NNNN>`, for example `HS-A1.BA1-REQ-0006`:
 
 - `SYSTEM` is the code of the PBS element the item belongs to. Each item has exactly one
   home system, fixed when it is created. Interfaces carry `LVL<x>` instead: the breakdown
-  level at which their two systems meet.
+  level of the two systems they join.
+- System codes follow the ISO 81346 reference-designation structure (RDS-PS / RDS-CW):
+  one designation per breakdown level, joined by dots, e.g. `A1.BA1.KFA1`. The tool
+  enforces the structure (1, 2 then 3 class letters plus a number; a child extends its
+  parent's code; codes are unique). The class-letter tables are licensed content: add
+  them to `rds.classes` in `model/project.json` to have the letters checked too. The
+  letters in the sample model are illustrative.
 - `TYPE` is `PBS`, a requirement level (`STK`, `USR`, `REQ`), `ASS` (assumption), `INT`,
   `VER`, `RSK` or `DEC`.
 
 ```json
 {
-  "id": "HS-HSS-REQ-0004",
+  "id": "HS-A1-REQ-0004",
   "object": "requirement",
   "type": "performance",
   "title": "Alert latency",
   "text": "The system shall raise an alert within 2 minutes of a reading falling outside its permitted range.",
   "stability": "stable",
   "status": "approved",
-  "priority": "must",
   "compliance": "non-compliant",
   "complianceRationale": "Worst case 3 min 10 s with 40 buoys reporting.",
   "verification": "test",
-  "traces": ["HS-HSS-USR-0003"]
+  "traces": ["HS-A1-USR-0003"],
+  "checks": [{ "by": "Hannah Schmidt", "date": "2026-11-21T09:14:00Z", "text": "..." }]
 }
 ```
 
@@ -124,12 +130,25 @@ Rules the validator enforces beyond field types and links:
 
 - An assumption (`ASS`) can never have stability `stable`.
 - A risk can only be raised against a PBS system whose control status is `approved`.
-- The system code in every ID must exist in the product breakdown.
+- An interface joins two systems at the same level, and may only link requirements that
+  belong to one of those two systems.
+- Every validation task has an owner: the owner of the item's system, falling back up
+  the breakdown to the top-level system owner.
 
-Stability (stable / developing / unstable) and compliance (compliant / compliance risk /
-non-compliant) are shown red-amber-green; the Metrics page rolls them up by requirement
-level and by system. Likelihood and impact labels live in `model/project.json` and are
-placeholders until the SEMP defines them.
+## Checking, validation and baselines
+
+- **Checking** (requirements and architecture): anyone who can see an item can add a
+  comment, stamped with their name and the time. Open comments are validation tasks
+  until someone closes them, optionally with a close-out note.
+- **Validation** lists every task, grouped by owner, with a chart of how many of each
+  type each person has. Missing requirement metadata is queued as tasks.
+- **Baselines**: every export asks for a minor or major baseline and an optional
+  description. The baseline is recorded in `model/exports/register.json` against the
+  commit it was taken from. "Baselines" on each page lists them; opening one reloads the
+  model at that commit, in the same view, read-only, so the document can be re-exported
+  exactly as issued. PDFs carry the document title and baseline version; CSVs start with
+  "UNCONTROLLED - INFORMATION ONLY". Exports made with uncommitted changes are stamped as
+  drafts and not recorded.
 
 ## Known limits of the PoC
 
@@ -140,4 +159,6 @@ placeholders until the SEMP defines them.
   merge will conflict on the file, which is visible but not friendly.
 - GitHub only. GitLab/Gitea need a second API adapter (`gh()` and the six calls around it).
 - Team access is simulated in the browser, not enforced by GitHub.
+- The PDF itself is not stored; the register stores what is needed to reproduce it.
+- Recording a baseline commits straight to the current branch, so it fails on a protected branch.
 - No restricted-repo split or Git LFS yet.

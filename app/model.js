@@ -5,7 +5,12 @@
      SYSTEM  the code of the PBS element the item belongs to (its one home system);
              interfaces use LVL<x>, the breakdown level they sit at.
      TYPE    PBS, a requirement level key (e.g. STK / USR / REQ), ASS, INT, VER, RSK or DEC.
-   An ID is fixed when the item is created and never changes. */
+   An ID is fixed when the item is created and never changes.
+
+   SYSTEM codes are ISO 81346 reference designations (RDS-PS / RDS-CW) without the aspect sign:
+   one single-level designation per breakdown level, joined by dots, e.g. A1.BA1.KFA1.
+   The tool enforces the structure (letters per level, numbering, parent prefix, uniqueness);
+   the class-letter tables are licensed content and can be supplied in project.json (rds.classes). */
 (function (root) {
   'use strict';
 
@@ -18,10 +23,13 @@
       { key: 'REQ', name: 'System', parent: 'USR' }
     ],
     statuses: ['draft', 'review', 'approved', 'obsolete'],
-    priorities: ['must', 'should', 'could'],
     verification: ['test', 'analysis', 'inspection', 'demonstration'],
     objectTypes: ['requirement', 'information'],
-    reqTypes: ['functional', 'performance', 'interface', 'environmental', 'constraint', 'safety'],
+    reqTypes: ['architecture', 'interface', 'functional', 'performance', 'system', 'implementation'],
+    safetyClasses: ['SC1', 'SC2', 'SC3', 'N/A'],
+    rds: { scheme: 'RDS-PS', aspect: '=', letters: [1, 2, 3], classes: [] },
+    interfaceTypes: { Function: ['Energy', 'Material', 'Information'], Physical: ['Geometry', 'Clearance', 'Load Transfer'] },
+    interfaceMaturity: ['Identified', 'RIBA 1', 'RIBA 2', 'RIBA 3', 'RIBA 4'],
     stabilities: ['stable', 'developing', 'unstable'],
     compliances: ['compliant', 'compliance risk', 'non-compliant'],
     likelihoodLabels: ['Rare', 'Unlikely', 'Possible', 'Likely', 'Almost certain'],
@@ -36,6 +44,7 @@
       { k: 'description', label: 'Description', type: 'area' },
       { k: 'kind', label: 'Kind', type: 'select', req: true, opts: ['system', 'subsystem', 'hardware', 'software', 'external'] },
       { k: 'status', label: 'Control status', type: 'select', req: true, opts: ['proposed', 'approved'] },
+      { k: 'safetyClass', label: 'Safety class', type: 'select', opts: 'safetyClasses' },
       { k: 'owner', label: 'System owner', type: 'text' },
       { k: 'company', label: 'Owner company', type: 'text' },
       { k: 'parent', label: 'Part of', type: 'link', to: ['PBS'] }
@@ -43,11 +52,15 @@
     INT: { name: 'Interface', plural: 'Interfaces', dir: 'interfaces', fields: [
       { k: 'title', label: 'Title', type: 'text', req: true },
       { k: 'description', label: 'Description', type: 'area' },
-      { k: 'kind', label: 'Kind', type: 'select', req: true, opts: ['data', 'power', 'mechanical', 'rf', 'human'] },
-      { k: 'from', label: 'From', type: 'link', req: true, to: ['PBS'] },
-      { k: 'to', label: 'To', type: 'link', req: true, to: ['PBS'] },
-      { k: 'status', label: 'Status', type: 'select', req: true, opts: ['draft', 'agreed', 'baselined'] },
-      { k: 'requirements', label: 'Driving requirements', type: 'links', to: ['LEAF'] }
+      { k: 'rationale', label: 'Interface rationale', type: 'area' },
+      { k: 'kind', label: 'Interface type', type: 'select', req: true, opts: 'interfaceTypes' },
+      { k: 'subtype', label: 'Sub-type', type: 'select', req: true, opts: 'interfaceTypes' },
+      { k: 'from', label: 'System A (from)', type: 'link', req: true, to: ['PBS'] },
+      { k: 'to', label: 'System B (to)', type: 'link', req: true, to: ['PBS'] },
+      { k: 'agreedFrom', label: 'Agreed by System A', type: 'select', req: true, opts: ['TBD', 'Yes', 'No'] },
+      { k: 'agreedTo', label: 'Agreed by System B', type: 'select', req: true, opts: ['TBD', 'Yes', 'No'] },
+      { k: 'maturity', label: 'Maturity', type: 'select', req: true, opts: 'interfaceMaturity' },
+      { k: 'requirements', label: 'Requirements (of System A or B)', type: 'links', to: ['LEAF'] }
     ] },
     VER: { name: 'Verification case', plural: 'Verification cases', dir: 'verification', fields: [
       { k: 'title', label: 'Title', type: 'text', req: true },
@@ -131,7 +144,6 @@
         { k: 'stability', label: 'Stability', type: 'select', rag: true, opts: ass ? not(proj.stabilities, proj.stabilities[0]) : 'stabilities' },
         { k: 'stabilityRationale', label: 'Stability rationale', type: 'area' },
         { k: 'status', label: 'Status', type: 'select', req: true, opts: 'statuses' },
-        { k: 'priority', label: 'Priority', type: 'select', req: true, opts: 'priorities' },
         { k: 'compliance', label: 'Compliance status', type: 'select', rag: true, opts: 'compliances' },
         { k: 'complianceRationale', label: 'Compliance rationale', type: 'area' },
         { k: 'complianceEvidence', label: 'Compliance evidence', type: 'area' },
@@ -142,6 +154,10 @@
     return defs.map(function (f) {
       var o = {}; for (var k in f) o[k] = f[k];
       if (typeof o.opts === 'string') o.opts = proj[o.opts];
+      if (o.opts && !Array.isArray(o.opts)) {   // grouped options: the type is the group, the sub-type its members
+        o.groups = o.opts;
+        o.opts = f.k === 'kind' ? Object.keys(o.groups) : [].concat.apply([], Object.keys(o.groups).map(function (g) { return o.groups[g]; }));
+      }
       if (typeof o.labels === 'string') o.labels = proj[o.labels];
       if (o.to) {
         var to = [];
@@ -181,8 +197,14 @@
     var issues = [], byId = {}, leaf = leafKey(proj), systems = {};
     var hasChildLevel = {};
     proj.levels.forEach(function (l) { if (l.parent) hasChildLevel[l.parent] = true; });
-    function add(severity, id, code, message) { issues.push({ severity: severity, id: id, code: code, message: message }); }
-    var idRe = new RegExp('^' + proj.code + '-[A-Z0-9]+-[A-Z]+-\\d{4}$');
+    var CATS = { meta: 'Missing metadata', check: 'Checking comment', orphan: 'Traceability', uncovered: 'Traceability', 'trace-obsolete': 'Traceability',
+      'no-case': 'Verification', 'no-target': 'Verification', failed: 'Verification', 'no-verification': 'Missing metadata', issue: 'Risk', unmitigated: 'Risk',
+      'int-noreq': 'Interface', 'no-evidence': 'Compliance', 'no-comp-rationale': 'Compliance', 'no-stab-rationale': 'Missing metadata' };
+    function add(severity, id, code, message) {
+      issues.push({ severity: severity, id: id, code: code, message: message, cat: severity === 'error' ? 'Error' : (CATS[code.split(':')[0]] || 'Other') });
+    }
+    var idRe = new RegExp('^' + proj.code + '-[A-Z0-9.]+-[A-Z]+-\\d{4}$');
+    var depthOf = function (pbsId) { return sysOf(pbsId).split('.').length - 1; };
 
     entries.forEach(function (e) {
       e._id = e.path.replace(/^.*\//, '').replace(/\.json$/, '');
@@ -225,6 +247,10 @@
         }
       });
 
+      // Open checking comments are tasks until someone closes them.
+      if (Array.isArray(d.checks)) d.checks.forEach(function (c) {
+        if (c && !c.closedBy) add('warn', id, 'check', 'Checking comment from ' + c.by + ' (' + String(c.date).slice(0, 10) + '): ' + c.text);
+      });
       var links = function (k) { return Array.isArray(d[k]) ? d[k].filter(function (t) { return byId[t]; }) : []; };
       if (type === 'REQ') {
         var lvl = levelDef(proj, prefixOf(id, proj)), isReq = d.object === 'requirement';
@@ -233,6 +259,10 @@
         if (d.compliance === proj.compliances[0] && isEmpty(d.complianceEvidence)) add('warn', id, 'no-evidence', 'Marked compliant with no compliance evidence.');
         if (d.compliance && d.compliance !== proj.compliances[0] && isEmpty(d.complianceRationale)) add('warn', id, 'no-comp-rationale', 'Not compliant, but no compliance rationale is given.');
         if (d.stability === proj.stabilities[proj.stabilities.length - 1] && isEmpty(d.stabilityRationale)) add('warn', id, 'no-stab-rationale', 'Marked ' + d.stability + ' with no stability rationale.');
+        var need = d.object === 'requirement' ? ['type', 'rationale', 'source', 'stability', 'compliance'] : d.object === 'assumption' ? ['rationale', 'source', 'stability'] : [];
+        if (d.status !== 'obsolete') fields(id, proj).forEach(function (f) {
+          if (need.indexOf(f.k) >= 0 && isEmpty(d[f.k])) add('warn', id, 'meta:' + f.k, f.label + ' is not filled in.');
+        });
         if (!lvl.parent) { if (!isEmpty(d.traces)) add('error', id, 'trace-top', 'Top-level requirements cannot trace upward.'); return; }
         links('traces').forEach(function (t) {
           if (d.status !== 'obsolete') covered[t] = true;
@@ -241,8 +271,26 @@
         if (isReq && isEmpty(d.traces) && d.status !== 'obsolete') add('warn', id, 'orphan', 'Does not trace to any ' + lvl.parent + ' requirement.');
       } else if (type === 'PBS') {
         if (d.parent === id) add('error', id, 'parent', 'A system cannot be part of itself.');
+        // ISO 81346 structure: one designation per level, each <letters><number>, extending the parent's code.
+        var segs = sysOf(id).split('.'), want = byId[d.parent] ? sysOf(d.parent) : '';
+        segs.forEach(function (seg, i) {
+          var n = proj.rds.letters[Math.min(i, proj.rds.letters.length - 1)];
+          if (!new RegExp('^[A-Z]{' + n + '}[1-9]\\d*$').test(seg)) add('error', id, 'rds', proj.rds.scheme + ' code: level ' + i + ' must be ' + n + ' class letter' + (n > 1 ? 's' : '') + ' and a number, got "' + seg + '".');
+          else if (proj.rds.classes[i] && proj.rds.classes[i].length && proj.rds.classes[i].indexOf(seg.replace(/\d+$/, '')) < 0) add('error', id, 'rds-class', proj.rds.scheme + ' code: "' + seg.replace(/\d+$/, '') + '" is not a class allowed at level ' + i + '.');
+        });
+        if (segs.slice(0, -1).join('.') !== want) add('error', id, 'rds-parent', proj.rds.scheme + ' code must extend its parent\'s code' + (want ? ' (' + want + '.…)' : ' (a top-level system has a single designation)') + '.');
       } else if (type === 'INT') {
         if (d.from && d.from === d.to) add('error', id, 'self', 'An interface needs two different systems.');
+        var fa = byId[d.from], fb = byId[d.to];
+        if (fa && fb && codeOf(d.from) === 'PBS' && codeOf(d.to) === 'PBS') {
+          if (depthOf(d.from) !== depthOf(d.to)) add('error', id, 'int-level', 'An interface can only join systems at the same architectural level (' + sysOf(d.from) + ' is level ' + depthOf(d.from) + ', ' + sysOf(d.to) + ' is level ' + depthOf(d.to) + ').');
+          else if (sysOf(id) !== 'LVL' + depthOf(d.from)) add('error', id, 'int-id', 'ID says ' + sysOf(id) + ' but the systems are at level ' + depthOf(d.from) + '.');
+          links('requirements').forEach(function (t) {
+            if (sysOf(t) !== sysOf(d.from) && sysOf(t) !== sysOf(d.to)) add('error', id, 'int-req', t + ' belongs to neither System A nor System B.');
+          });
+        }
+        if (d.kind && d.subtype && proj.interfaceTypes[d.kind] && proj.interfaceTypes[d.kind].indexOf(d.subtype) < 0) add('error', id, 'subtype', 'Sub-type "' + d.subtype + '" does not belong to interface type "' + d.kind + '".');
+        if (isEmpty(d.requirements)) add('warn', id, 'int-noreq', 'Not linked to a requirement of either system.');
       } else if (type === 'VER') {
         anyVer = true;
         if (isEmpty(d.verifies)) add('warn', id, 'no-target', 'Does not verify any requirement.');
@@ -264,6 +312,15 @@
       if (key === leaf && anyVer && d.status === 'approved' && !verified[id]) add('warn', id, 'no-case', 'Approved, but no verification case covers it.');
     });
 
+    // Every task gets an owner: the owner of the item's system (System A for an interface),
+    // falling back to the owner of the top-level system.
+    var rootOwner = '';
+    Object.keys(systems).sort().forEach(function (c) { if (!rootOwner && c.indexOf('.') < 0 && systems[c].data.owner) rootOwner = systems[c].data.owner; });
+    issues.forEach(function (i) {
+      var e = byId[i.id], sys = e && codeOf(i.id) === 'INT' && e.data.from ? sysOf(e.data.from) : sysOf(i.id), own = '';
+      for (var c = sys; c && !own; c = c.indexOf('.') < 0 ? '' : c.slice(0, c.lastIndexOf('.'))) own = systems[c] && systems[c].data.owner || '';
+      i.owner = own || rootOwner || 'Unassigned';
+    });
     var rank = { error: 0, warn: 1 };
     issues.sort(function (a, b) { return rank[a.severity] - rank[b.severity] || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
     return issues;

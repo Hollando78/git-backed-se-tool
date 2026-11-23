@@ -8,5 +8,8 @@
   "to": "HS-A1.KA1-PBS-0008",
   "agreedFrom": "TBD",
   "agreedTo": "TBD",
-  "maturity": "Identified"
+  "maturity": "Identified",
+  "requirements": [
+    "HS-A1.KA1-REQ-0003"
+  ]
 }

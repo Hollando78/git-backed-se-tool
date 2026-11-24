@@ -1,13 +1,12 @@
 /* Shared model rules: used by the browser app and by tools/validate.js (Node).
    No dependencies. Loaded as a classic script in the browser, require()d in Node.
 
-   ID coding:  <PROJECT>-<SYSTEM>-<TYPE>-<NNNN>      e.g. HS-BUOY-REQ-0006
-     SYSTEM  the code of the PBS element the item belongs to (its one home system);
-             interfaces use LVL<x>, the breakdown level they sit at.
+   ID coding:  <PROJECT>-<TYPE>-<NNNN>      e.g. HS-REQ-0006, HS-ASS-0001, HS-RSK-0005
      TYPE    PBS, a requirement level key (e.g. STK / USR / REQ), ASS, INT, VER, RSK or DEC.
    An ID is fixed when the item is created and never changes.
 
-   SYSTEM codes are ISO 81346 reference designations (RDS-PS / RDS-CW) without the aspect sign:
+   Which system an item belongs to is an attribute (`system`), not part of the ID.
+   Each PBS element carries an ISO 81346 reference designation (RDS-PS / RDS-CW) in `code`:
    one single-level designation per breakdown level, joined by dots, e.g. A1.BA1.KFA1.
    The tool enforces the structure (letters per level, numbering, parent prefix, uniqueness);
    the class-letter tables are licensed content and can be supplied in project.json (rds.classes). */
@@ -40,6 +39,7 @@
      LEAF / REQS are placeholders resolved against the project's requirement levels. */
   var TYPES = {
     PBS: { name: 'System', plural: 'Systems (PBS)', dir: 'components', fields: [
+      { k: 'code', label: 'RDS code', type: 'text', req: true, fixed: true },
       { k: 'title', label: 'System name', type: 'text', req: true },
       { k: 'description', label: 'Description', type: 'area' },
       { k: 'kind', label: 'Kind', type: 'select', req: true, opts: ['system', 'subsystem', 'hardware', 'software', 'external'] },
@@ -63,14 +63,18 @@
       { k: 'requirements', label: 'Requirements (of System A or B)', type: 'links', to: ['LEAF'] }
     ] },
     VER: { name: 'Verification case', plural: 'Verification cases', dir: 'verification', fields: [
+      { k: 'system', label: 'System', type: 'link', req: true, to: ['PBS'] },
       { k: 'title', label: 'Title', type: 'text', req: true },
       { k: 'method', label: 'Method', type: 'select', req: true, opts: 'verification' },
       { k: 'procedure', label: 'Procedure and pass criteria', type: 'area' },
       { k: 'result', label: 'Result', type: 'select', req: true, opts: ['planned', 'passed', 'failed', 'blocked'] },
       { k: 'notes', label: 'Result notes', type: 'area' },
+      { k: 'evidenceDoc', label: 'Evidence document', type: 'text' },
+      { k: 'evidenceVersion', label: 'Evidence version', type: 'text' },
       { k: 'verifies', label: 'Verifies', type: 'links', to: ['LEAF'] }
     ] },
     RSK: { name: 'Risk', plural: 'Risks', dir: 'risks', fields: [
+      { k: 'system', label: 'System', type: 'link', req: true, to: ['PBS'] },
       { k: 'title', label: 'Title', type: 'text', req: true },
       { k: 'cause', label: 'If (the system does, or fails to do, something)', short: 'If', type: 'area', req: true },
       { k: 'consequence', label: 'Then (the consequence)', short: 'Then', type: 'area', req: true },
@@ -82,6 +86,7 @@
       { k: 'requirements', label: 'Related requirements', type: 'links', to: ['LEAF'] }
     ] },
     DEC: { name: 'Decision', plural: 'Decisions', dir: 'decisions', fields: [
+      { k: 'system', label: 'System', type: 'link', req: true, to: ['PBS'] },
       { k: 'title', label: 'Title', type: 'text', req: true },
       { k: 'context', label: 'Context', type: 'area', req: true },
       { k: 'options', label: 'Options considered', type: 'area' },
@@ -106,12 +111,10 @@
     return leaf ? leaf.key : null;
   }
   /* Raw type code. Short forms such as "RSK-000" are accepted so code can ask about a type before an ID exists. */
-  function codeOf(id) { var p = String(id).split('-'); return p.length >= 4 ? p[p.length - 2] : p[0]; }
-  /* System segment of an ID ('' for the short form). */
-  function sysOf(id) { var p = String(id).split('-'); return p.length >= 4 ? p.slice(1, -2).join('-') : ''; }
+  function codeOf(id) { var p = String(id).split('-'); return p.length >= 3 ? p[p.length - 2] : p[0]; }
   /* The collection an item belongs to: assumptions live with the lowest requirement level. */
   function prefixOf(id, proj) { var c = codeOf(id); return c === 'ASS' ? leafKey(proj || DEFAULT_PROJECT) : c; }
-  function makeId(proj, sys, code, n) { return [proj.code, sys, code, String(n).padStart(4, '0')].join('-'); }
+  function makeId(proj, code, n) { return [proj.code, code, String(n).padStart(4, '0')].join('-'); }
   function typeOf(id, proj) {
     var p = prefixOf(id, proj);
     if (levelDef(proj, p)) return 'REQ';
@@ -134,6 +137,7 @@
     var defs;
     if (lvl) {
       defs = [
+        { k: 'system', label: 'System', type: 'link', req: true, to: ['PBS'] },
         { k: 'object', label: 'Object type', type: 'select', req: true, opts: ass ? ['assumption'] : not(proj.objectTypes, 'assumption') },
         { k: 'type', label: 'Requirement type', type: 'select', opts: 'reqTypes' },
         { k: 'title', label: 'Title', type: 'text', req: true },
@@ -199,12 +203,16 @@
     proj.levels.forEach(function (l) { if (l.parent) hasChildLevel[l.parent] = true; });
     var CATS = { meta: 'Missing metadata', check: 'Checking comment', orphan: 'Traceability', uncovered: 'Traceability', 'trace-obsolete': 'Traceability',
       'no-case': 'Verification', 'no-target': 'Verification', failed: 'Verification', 'no-verification': 'Missing metadata', issue: 'Risk', unmitigated: 'Risk',
-      'int-noreq': 'Interface', 'no-evidence': 'Compliance', 'no-comp-rationale': 'Compliance', 'no-stab-rationale': 'Missing metadata' };
+      'int-noreq': 'Interface', 'no-evidence': 'Compliance', 'evidence-ref': 'Compliance', 'no-comp-rationale': 'Compliance', 'no-stab-rationale': 'Missing metadata' };
     function add(severity, id, code, message) {
       issues.push({ severity: severity, id: id, code: code, message: message, cat: severity === 'error' ? 'Error' : (CATS[code.split(':')[0]] || 'Other') });
     }
-    var idRe = new RegExp('^' + proj.code + '-[A-Z0-9.]+-[A-Z]+-\\d{4}$');
+    var idRe = new RegExp('^' + proj.code + '-[A-Z]+-\\d{4}$');
+    /* RDS code of an item's system (its own code for a PBS element). */
+    var sysOf = function (id) { var e = byId[id]; if (!e) return ''; if (codeOf(id) === 'PBS') return e.data.code || ''; return byId[e.data.system] ? (byId[e.data.system].data.code || '') : ''; };
     var depthOf = function (pbsId) { return sysOf(pbsId).split('.').length - 1; };
+    // A document reference needs a number (e.g. HS-TR-0012) and a version (e.g. v1.2, Rev B, Issue 3).
+    var DOC_NO = /\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-\d{2,}\b|\b[A-Z]{2,}\d{3,}\b/, DOC_VER = /\b(?:v\.?\s*\d[\d.]*|(?:ver|version|rev|revision|issue|iss)\.?\s*[0-9A-Z][\d.]*)\b/i;
 
     entries.forEach(function (e) {
       e._id = e.path.replace(/^.*\//, '').replace(/\.json$/, '');
@@ -224,9 +232,7 @@
       if (!byId[id]) { add('error', id, 'schema', 'File must contain a JSON object.'); return; }
       var type = typeOf(id, proj);
       if (!type) { add('error', id, 'type', 'Type code "' + codeOf(id) + '" is not a known item type.'); return; }
-      if (!idRe.test(id)) add('error', id, 'id-format', 'ID must look like ' + makeId(proj, 'SYSTEM', codeOf(id), 1) + '.');
-      else if (type === 'INT') { if (!/^LVL\d+$/.test(sysOf(id))) add('error', id, 'system', 'Interface IDs carry a level, e.g. ' + makeId(proj, 'LVL1', 'INT', 1) + '.'); }
-      else if (!systems[sysOf(id)]) add('error', id, 'system', 'System code "' + sysOf(id) + '" is not in the product breakdown.');
+      if (!idRe.test(id)) add('error', id, 'id-format', 'ID must look like ' + makeId(proj, codeOf(id), 1) + '.');
       if (e.path !== relPath(id, proj)) add('error', id, 'path', 'File should be at ' + relPath(id, proj) + '.');
       if (d.id !== id) add('error', id, 'id-file', 'Field id "' + d.id + '" does not match file name.');
 
@@ -257,6 +263,7 @@
         if (isReq && d.text && !/\bshall\b/i.test(d.text)) add('warn', id, 'shall', 'Requirement has no "shall".');
         if (isReq && lvl.key === leaf && !d.verification && d.status !== 'obsolete') add('warn', id, 'no-verification', 'No verification method set.');
         if (d.compliance === proj.compliances[0] && isEmpty(d.complianceEvidence)) add('warn', id, 'no-evidence', 'Marked compliant with no compliance evidence.');
+        if (!isEmpty(d.complianceEvidence) && !(DOC_NO.test(d.complianceEvidence) && DOC_VER.test(d.complianceEvidence))) add('warn', id, 'evidence-ref', 'Compliance evidence does not cite a document number and version (for example HS-TR-0012 v1.0).');
         if (d.compliance && d.compliance !== proj.compliances[0] && isEmpty(d.complianceRationale)) add('warn', id, 'no-comp-rationale', 'Not compliant, but no compliance rationale is given.');
         if (d.stability === proj.stabilities[proj.stabilities.length - 1] && isEmpty(d.stabilityRationale)) add('warn', id, 'no-stab-rationale', 'Marked ' + d.stability + ' with no stability rationale.');
         var need = d.object === 'requirement' ? ['type', 'rationale', 'source', 'stability', 'compliance'] : d.object === 'assumption' ? ['rationale', 'source', 'stability'] : [];
@@ -272,7 +279,7 @@
       } else if (type === 'PBS') {
         if (d.parent === id) add('error', id, 'parent', 'A system cannot be part of itself.');
         // ISO 81346 structure: one designation per level, each <letters><number>, extending the parent's code.
-        var segs = sysOf(id).split('.'), want = byId[d.parent] ? sysOf(d.parent) : '';
+        var segs = String(d.code || '').split('.'), want = byId[d.parent] ? sysOf(d.parent) : '';
         segs.forEach(function (seg, i) {
           var n = proj.rds.letters[Math.min(i, proj.rds.letters.length - 1)];
           if (!new RegExp('^[A-Z]{' + n + '}[1-9]\\d*$').test(seg)) add('error', id, 'rds', proj.rds.scheme + ' code: level ' + i + ' must be ' + n + ' class letter' + (n > 1 ? 's' : '') + ' and a number, got "' + seg + '".');
@@ -284,7 +291,6 @@
         var fa = byId[d.from], fb = byId[d.to];
         if (fa && fb && codeOf(d.from) === 'PBS' && codeOf(d.to) === 'PBS') {
           if (depthOf(d.from) !== depthOf(d.to)) add('error', id, 'int-level', 'An interface can only join systems at the same architectural level (' + sysOf(d.from) + ' is level ' + depthOf(d.from) + ', ' + sysOf(d.to) + ' is level ' + depthOf(d.to) + ').');
-          else if (sysOf(id) !== 'LVL' + depthOf(d.from)) add('error', id, 'int-id', 'ID says ' + sysOf(id) + ' but the systems are at level ' + depthOf(d.from) + '.');
           links('requirements').forEach(function (t) {
             if (sysOf(t) !== sysOf(d.from) && sysOf(t) !== sysOf(d.to)) add('error', id, 'int-req', t + ' belongs to neither System A nor System B.');
           });
@@ -297,7 +303,7 @@
         if (d.result === 'failed') add('warn', id, 'failed', 'Verification failed.');
         links('verifies').forEach(function (t) { verified[t] = true; });
       } else if (type === 'RSK') {
-        var home = systems[sysOf(id)];
+        var home = byId[d.system];
         if (home && home.data.status !== 'approved') add('error', id, 'uncontrolled', 'Risks can only be raised against an approved system; ' + sysOf(id) + ' is ' + (home.data.status || 'not approved') + '.');
         if (d.status === 'impacting') add('warn', id, 'issue', 'Risk is impacting: it is now an issue.');
         else if (d.likelihood * d.impact >= 12 && d.status === 'open' && isEmpty(d.mitigation)) add('warn', id, 'unmitigated', 'High risk is open with no mitigation recorded.');
@@ -326,7 +332,7 @@
     return issues;
   }
 
-  var api = { DEFAULT_PROJECT: DEFAULT_PROJECT, TYPES: TYPES, project: project, codeOf: codeOf, sysOf: sysOf, prefixOf: prefixOf, makeId: makeId, leafKey: leafKey,
+  var api = { DEFAULT_PROJECT: DEFAULT_PROJECT, TYPES: TYPES, project: project, codeOf: codeOf, prefixOf: prefixOf, makeId: makeId, leafKey: leafKey,
     typeOf: typeOf, areaOf: areaOf, relPath: relPath, isItemPath: isItemPath, fields: fields, serialize: serialize, validate: validate };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SEModel = api;

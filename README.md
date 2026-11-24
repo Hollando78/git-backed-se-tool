@@ -95,23 +95,23 @@ in the URL preselects a repository; on GitHub Pages the repository is inferred f
 
 ## ID coding and files
 
-Every item ID is `<PROJECT>-<SYSTEM>-<TYPE>-<NNNN>`, for example `HS-A1.BA1-REQ-0006`:
+Every item ID is `<PROJECT>-<TYPE>-<NNNN>`, for example `HS-REQ-0006`, `HS-ASS-0001`,
+`HS-RSK-0005`. `TYPE` is `PBS`, a requirement level (`STK`, `USR`, `REQ`), `ASS`
+(assumption), `INT`, `VER`, `RSK` or `DEC`. An ID never changes.
 
-- `SYSTEM` is the code of the PBS element the item belongs to. Each item has exactly one
-  home system, fixed when it is created. Interfaces carry `LVL<x>` instead: the breakdown
-  level of the two systems they join.
-- System codes follow the ISO 81346 reference-designation structure (RDS-PS / RDS-CW):
-  one designation per breakdown level, joined by dots, e.g. `A1.BA1.KFA1`. The tool
-  enforces the structure (1, 2 then 3 class letters plus a number; a child extends its
-  parent's code; codes are unique). The class-letter tables are licensed content: add
-  them to `rds.classes` in `model/project.json` to have the letters checked too. The
-  letters in the sample model are illustrative.
-- `TYPE` is `PBS`, a requirement level (`STK`, `USR`, `REQ`), `ASS` (assumption), `INT`,
-  `VER`, `RSK` or `DEC`.
+- The system an item belongs to is an attribute (`system`), not part of the ID, so an
+  item can be moved to another system without being renumbered.
+- Each PBS element carries an ISO 81346 reference designation (RDS-PS / RDS-CW) in its
+  `code` attribute: one designation per breakdown level, joined by dots, e.g.
+  `A1.BA1.KFA1`. The tool enforces the structure (1, 2 then 3 class letters plus a
+  number; a child extends its parent's code; codes are unique). The class-letter tables
+  are licensed content: add them to `rds.classes` in `model/project.json` to have the
+  letters checked too. The letters in the sample model are illustrative.
 
 ```json
 {
-  "id": "HS-A1-REQ-0004",
+  "id": "HS-REQ-0004",
+  "system": "HS-PBS-0001",
   "object": "requirement",
   "type": "performance",
   "title": "Alert latency",
@@ -121,7 +121,7 @@ Every item ID is `<PROJECT>-<SYSTEM>-<TYPE>-<NNNN>`, for example `HS-A1.BA1-REQ-
   "compliance": "non-compliant",
   "complianceRationale": "Worst case 3 min 10 s with 40 buoys reporting.",
   "verification": "test",
-  "traces": ["HS-A1-USR-0003"],
+  "traces": ["HS-USR-0003"],
   "checks": [{ "by": "Hannah Schmidt", "date": "2026-11-21T09:14:00Z", "text": "..." }]
 }
 ```
@@ -129,6 +129,7 @@ Every item ID is `<PROJECT>-<SYSTEM>-<TYPE>-<NNNN>`, for example `HS-A1.BA1-REQ-
 Rules the validator enforces beyond field types and links:
 
 - An assumption (`ASS`) can never have stability `stable`.
+- Compliance evidence must cite a document number and a version (warning if not).
 - A risk can only be raised against a PBS system whose control status is `approved`.
 - An interface joins two systems at the same level, and may only link requirements that
   belong to one of those two systems.
@@ -142,13 +143,13 @@ Rules the validator enforces beyond field types and links:
   until someone closes them, optionally with a close-out note.
 - **Validation** lists every task, grouped by owner, with a chart of how many of each
   type each person has. Missing requirement metadata is queued as tasks.
-- **Baselines**: every export asks for a minor or major baseline and an optional
-  description. The baseline is recorded in `model/exports/register.json` against the
+- **Baselines**: every Print / PDF export asks for a minor or major baseline and an
+  optional description (CSV exports are plain downloads and are never baselined). The baseline is recorded in `model/exports/register.json` against the
   commit it was taken from. "Baselines" on each page lists them; opening one reloads the
   model at that commit, in the same view, read-only, so the document can be re-exported
   exactly as issued. PDFs carry the document title and baseline version; CSVs start with
-  "UNCONTROLLED - INFORMATION ONLY". Exports made with uncommitted changes are stamped as
-  drafts and not recorded.
+  "UNCONTROLLED - INFORMATION ONLY". PDF exports made with uncommitted changes are stamped
+  as drafts and not recorded.
 
 ## Known limits of the PoC
 

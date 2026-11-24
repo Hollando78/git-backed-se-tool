@@ -1,11 +1,14 @@
 {
-  "id": "HS-A1.BA1-VER-0001",
+  "id": "HS-VER-0001",
+  "system": "HS-PBS-0002",
   "title": "Sampling interval bench test",
   "method": "test",
   "procedure": "Run the buoy on the bench for 24 h; every parameter is sampled at intervals of 10 min or less.",
   "result": "passed",
   "notes": "Longest observed interval 9 min 58 s.",
+  "evidenceDoc": "HS-TR-0001",
+  "evidenceVersion": "1.0",
   "verifies": [
-    "HS-A1.BA1-REQ-0001"
+    "HS-REQ-0001"
   ]
 }

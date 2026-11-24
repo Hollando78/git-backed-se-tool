@@ -1,10 +1,11 @@
 {
-  "id": "HS-A1.BA1.KFA1-VER-0007",
+  "id": "HS-VER-0007",
+  "system": "HS-PBS-0004",
   "title": "Health telemetry soak test",
   "method": "test",
   "procedure": "Run for 7 days; a health report is received in every clock hour.",
   "result": "planned",
   "verifies": [
-    "HS-A1.BA1.KFA1-REQ-0007"
+    "HS-REQ-0007"
   ]
 }

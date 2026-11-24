@@ -1,10 +1,11 @@
 {
-  "id": "HS-A1.BA1.KFA1-VER-0009",
+  "id": "HS-VER-0009",
+  "system": "HS-PBS-0004",
   "title": "Outage replay test",
   "method": "test",
   "procedure": "Disable the modem for 7 days, restore it and confirm no reading is missing on shore.",
   "result": "planned",
   "verifies": [
-    "HS-A1.BA1.KFA1-REQ-0009"
+    "HS-REQ-0009"
   ]
 }

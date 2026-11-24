@@ -1,10 +1,11 @@
 {
-  "id": "HS-A1.KA1.KFA1-VER-0005",
+  "id": "HS-VER-0005",
+  "system": "HS-PBS-0010",
   "title": "Remote threshold change demonstration",
   "method": "demonstration",
   "procedure": "Change the pH range for one buoy from the dashboard and confirm it takes effect without a visit.",
   "result": "planned",
   "verifies": [
-    "HS-A1.KA1.KFA1-REQ-0005"
+    "HS-REQ-0005"
   ]
 }

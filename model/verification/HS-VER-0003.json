@@ -1,10 +1,11 @@
 {
-  "id": "HS-A1.KA1-VER-0003",
+  "id": "HS-VER-0003",
+  "system": "HS-PBS-0008",
   "title": "Retention configuration inspection",
   "method": "inspection",
   "procedure": "Inspect storage lifecycle policy; no rule deletes readings younger than 24 months.",
   "result": "planned",
   "verifies": [
-    "HS-A1.KA1-REQ-0003"
+    "HS-REQ-0003"
   ]
 }

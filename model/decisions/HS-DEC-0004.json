@@ -1,11 +1,12 @@
 {
-  "id": "HS-A1.BA1.EAA1-DEC-0004",
+  "id": "HS-DEC-0004",
+  "system": "HS-PBS-0007",
   "title": "Add an AIS aid-to-navigation transponder",
   "context": "The harbour master asked for buoys to appear on vessel chart plotters.",
   "options": "Light only; light plus AIS AtoN; virtual AtoN broadcast from shore.",
   "status": "proposed",
   "affects": [
-    "HS-A1.BA1.EAA1-PBS-0007",
-    "HS-A1.BA1.EAA1-REQ-0010"
+    "HS-PBS-0007",
+    "HS-REQ-0010"
   ]
 }

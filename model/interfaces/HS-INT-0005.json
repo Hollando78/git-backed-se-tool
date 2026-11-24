@@ -1,11 +1,11 @@
 {
-  "id": "HS-LVL1-INT-0005",
+  "id": "HS-INT-0005",
   "title": "Network to shore",
   "description": "MQTT broker endpoint on the shore platform; one topic per buoy.",
   "kind": "Function",
   "subtype": "Information",
-  "from": "HS-A1.XA1-PBS-0012",
-  "to": "HS-A1.KA1-PBS-0008",
+  "from": "HS-PBS-0012",
+  "to": "HS-PBS-0008",
   "agreedFrom": "TBD",
   "agreedTo": "TBD",
   "maturity": "Identified"

@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1.BTA1-RSK-0006",
+  "id": "HS-RSK-0006",
+  "system": "HS-PBS-0003",
   "title": "Sensor supplier lead time",
   "cause": "The dissolved-oxygen probe lead time slips.",
   "consequence": "The first deployment misses the summer window.",

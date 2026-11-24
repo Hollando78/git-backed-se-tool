@@ -1,11 +1,11 @@
 {
-  "id": "HS-LVL2-INT-0007",
+  "id": "HS-INT-0007",
   "title": "Dashboard query API",
   "description": "Read-only HTTP API for live values and date-range queries.",
   "kind": "Function",
   "subtype": "Information",
-  "from": "HS-A1.KA1.CFA1-PBS-0009",
-  "to": "HS-A1.KA1.PGA1-PBS-0011",
+  "from": "HS-PBS-0009",
+  "to": "HS-PBS-0011",
   "agreedFrom": "TBD",
   "agreedTo": "TBD",
   "maturity": "Identified"

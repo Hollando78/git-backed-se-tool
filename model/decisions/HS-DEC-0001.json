@@ -1,13 +1,14 @@
 {
-  "id": "HS-A1.BA1.TFA1-DEC-0001",
+  "id": "HS-DEC-0001",
+  "system": "HS-PBS-0006",
   "title": "LTE-M as the primary data link",
   "context": "Buoys need a low-power link that delivers readings within a minute.",
   "options": "LTE-M; satellite short-burst data; private LoRaWAN gateway on the harbour wall.",
   "decision": "LTE-M. Coverage is adequate in the inner harbour and running cost is a tenth of satellite.",
   "status": "accepted",
   "affects": [
-    "HS-A1-REQ-0002",
-    "HS-A1.BA1.TFA1-PBS-0006",
-    "HS-LVL1-INT-0004"
+    "HS-INT-0004",
+    "HS-PBS-0006",
+    "HS-REQ-0002"
   ]
 }

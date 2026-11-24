@@ -1,15 +1,15 @@
 {
-  "id": "HS-LVL2-INT-0002",
+  "id": "HS-INT-0002",
   "title": "Controller to modem",
   "description": "UART with AT command set; batched uploads after an outage.",
   "kind": "Function",
   "subtype": "Information",
-  "from": "HS-A1.BA1.KFA1-PBS-0004",
-  "to": "HS-A1.BA1.TFA1-PBS-0006",
+  "from": "HS-PBS-0004",
+  "to": "HS-PBS-0006",
   "agreedFrom": "Yes",
   "agreedTo": "TBD",
   "maturity": "RIBA 2",
   "requirements": [
-    "HS-A1.BA1.KFA1-REQ-0009"
+    "HS-REQ-0009"
   ]
 }

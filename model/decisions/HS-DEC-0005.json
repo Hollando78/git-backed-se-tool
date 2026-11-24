@@ -1,11 +1,12 @@
 {
-  "id": "HS-A1.KA1.CFA1-DEC-0005",
+  "id": "HS-DEC-0005",
+  "system": "HS-PBS-0009",
   "title": "Managed time-series database",
   "context": "Readings must be kept for 24 months and queried by date range.",
   "options": "Managed cloud time-series service; self-hosted database on a virtual machine.",
   "status": "proposed",
   "affects": [
-    "HS-A1.KA1-REQ-0003",
-    "HS-A1.KA1.CFA1-PBS-0009"
+    "HS-PBS-0009",
+    "HS-REQ-0003"
   ]
 }

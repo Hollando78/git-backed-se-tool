@@ -1,16 +1,16 @@
 {
-  "id": "HS-LVL2-INT-0001",
+  "id": "HS-INT-0001",
   "title": "Sensor bus",
   "description": "RS-485 Modbus; controller polls each probe.",
   "rationale": "Probes are supplied as a unit; a field bus keeps the controller independent of probe count.",
   "kind": "Function",
   "subtype": "Information",
-  "from": "HS-A1.BA1.BTA1-PBS-0003",
-  "to": "HS-A1.BA1.KFA1-PBS-0004",
+  "from": "HS-PBS-0003",
+  "to": "HS-PBS-0004",
   "agreedFrom": "Yes",
   "agreedTo": "Yes",
   "maturity": "RIBA 3",
   "requirements": [
-    "HS-A1.BA1.KFA1-REQ-0007"
+    "HS-REQ-0007"
   ]
 }

@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1.BTA1-RSK-0001",
+  "id": "HS-RSK-0001",
+  "system": "HS-PBS-0003",
   "title": "Biofouling degrades sensor accuracy",
   "cause": "Marine growth builds up on the probes.",
   "consequence": "Readings drift and alerts become unreliable.",
@@ -9,6 +10,6 @@
   "mitigation": "Automatic wiper every 6 h; drift check against a reference sample at each visit.",
   "owner": "Ingrid Solberg",
   "requirements": [
-    "HS-A1.BA1-REQ-0001"
+    "HS-REQ-0001"
   ]
 }

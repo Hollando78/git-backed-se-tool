@@ -1,12 +1,12 @@
 {
-  "id": "HS-LVL1-INT-0004",
+  "id": "HS-INT-0004",
   "title": "Buoy uplink",
   "description": "LTE-M band 20; MQTT over TLS from the buoy modem.",
   "rationale": "Cellular link chosen in DEC-0001.",
   "kind": "Function",
   "subtype": "Information",
-  "from": "HS-A1.BA1-PBS-0002",
-  "to": "HS-A1.XA1-PBS-0012",
+  "from": "HS-PBS-0002",
+  "to": "HS-PBS-0012",
   "agreedFrom": "TBD",
   "agreedTo": "TBD",
   "maturity": "Identified"

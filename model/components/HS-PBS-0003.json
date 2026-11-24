@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1.BTA1-PBS-0003",
+  "id": "HS-PBS-0003",
+  "code": "A1.BA1.BTA1",
   "title": "Sensor suite",
   "description": "pH, dissolved oxygen, turbidity and temperature probes with anti-fouling wiper.",
   "kind": "hardware",
@@ -7,5 +8,5 @@
   "safetyClass": "N/A",
   "owner": "Mei Lin",
   "company": "Aquasense Instruments",
-  "parent": "HS-A1.BA1-PBS-0002"
+  "parent": "HS-PBS-0002"
 }

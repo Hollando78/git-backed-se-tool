@@ -1,10 +1,11 @@
 {
-  "id": "HS-A1.XA1-PBS-0012",
+  "id": "HS-PBS-0012",
+  "code": "A1.XA1",
   "title": "Cellular network",
   "description": "Public LTE-M network operated by a third party.",
   "kind": "external",
   "status": "approved",
   "safetyClass": "N/A",
   "company": "Nordlink Mobile",
-  "parent": "HS-A1-PBS-0001"
+  "parent": "HS-PBS-0001"
 }

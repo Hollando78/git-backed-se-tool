@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1.KFA1-PBS-0004",
+  "id": "HS-PBS-0004",
+  "code": "A1.BA1.KFA1",
   "title": "Buoy controller",
   "description": "Embedded firmware: sampling schedule, local storage, health monitoring.",
   "kind": "software",
@@ -7,5 +8,5 @@
   "safetyClass": "SC3",
   "owner": "Kenji Watanabe",
   "company": "Tidewater Systems",
-  "parent": "HS-A1.BA1-PBS-0002"
+  "parent": "HS-PBS-0002"
 }

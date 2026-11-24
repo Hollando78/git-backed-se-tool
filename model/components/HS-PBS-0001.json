@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1-PBS-0001",
+  "id": "HS-PBS-0001",
+  "code": "A1",
   "title": "Harbour Sentinel system",
   "description": "The complete monitoring capability: buoy fleet plus shore services.",
   "kind": "system",

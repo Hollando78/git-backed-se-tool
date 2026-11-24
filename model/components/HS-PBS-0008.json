@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.KA1-PBS-0008",
+  "id": "HS-PBS-0008",
+  "code": "A1.KA1",
   "title": "Shore platform",
   "description": "Cloud-hosted services used by the Harbour Authority.",
   "kind": "subsystem",
@@ -7,5 +8,5 @@
   "safetyClass": "N/A",
   "owner": "Priya Nair",
   "company": "Tidewater Systems",
-  "parent": "HS-A1-PBS-0001"
+  "parent": "HS-PBS-0001"
 }

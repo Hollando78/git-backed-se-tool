@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.KA1.PGA1-PBS-0011",
+  "id": "HS-PBS-0011",
+  "code": "A1.KA1.PGA1",
   "title": "Operator dashboard",
   "description": "Web application for live readings, trends and configuration.",
   "kind": "software",
@@ -7,7 +8,7 @@
   "safetyClass": "N/A",
   "owner": "Luca Bianchi",
   "company": "Tidewater Systems",
-  "parent": "HS-A1.KA1-PBS-0008",
+  "parent": "HS-PBS-0008",
   "checks": [
     {
       "by": "Amara Okafor",

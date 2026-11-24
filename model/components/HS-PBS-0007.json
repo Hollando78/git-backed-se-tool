@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1.EAA1-PBS-0007",
+  "id": "HS-PBS-0007",
+  "code": "A1.BA1.EAA1",
   "title": "Navigation aids",
   "description": "Marker light and AIS transponder.",
   "kind": "hardware",
@@ -7,5 +8,5 @@
   "safetyClass": "SC2",
   "owner": "Ingrid Solberg",
   "company": "Tidewater Systems",
-  "parent": "HS-A1.BA1-PBS-0002"
+  "parent": "HS-PBS-0002"
 }

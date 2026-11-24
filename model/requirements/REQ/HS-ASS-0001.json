@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1.GBA1-ASS-0001",
+  "id": "HS-ASS-0001",
+  "system": "HS-PBS-0005",
   "object": "assumption",
   "title": "Winter irradiance",
   "text": "Average winter solar irradiance at the moorings is at least 1.0 kWh/m2/day.",

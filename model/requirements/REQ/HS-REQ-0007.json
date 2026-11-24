@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1.KFA1-REQ-0007",
+  "id": "HS-REQ-0007",
+  "system": "HS-PBS-0004",
   "object": "requirement",
   "type": "functional",
   "title": "Health telemetry",
@@ -9,6 +10,6 @@
   "status": "review",
   "verification": "test",
   "traces": [
-    "HS-A1-USR-0006"
+    "HS-USR-0006"
   ]
 }

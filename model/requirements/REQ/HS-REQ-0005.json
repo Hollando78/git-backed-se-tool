@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.KA1.KFA1-REQ-0005",
+  "id": "HS-REQ-0005",
+  "system": "HS-PBS-0010",
   "object": "requirement",
   "type": "functional",
   "title": "Remote threshold configuration",
@@ -10,6 +11,6 @@
   "status": "approved",
   "verification": "demonstration",
   "traces": [
-    "HS-A1-USR-0004"
+    "HS-USR-0004"
   ]
 }

@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1-STK-0004",
+  "id": "HS-STK-0004",
+  "system": "HS-PBS-0001",
   "object": "requirement",
   "type": "system",
   "title": "Safe coexistence with vessel traffic",

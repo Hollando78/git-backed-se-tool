@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1-REQ-0006",
+  "id": "HS-REQ-0006",
+  "system": "HS-PBS-0002",
   "object": "requirement",
   "type": "performance",
   "title": "Energy autonomy",
@@ -9,10 +10,10 @@
   "stability": "stable",
   "status": "approved",
   "compliance": "compliant",
-  "complianceEvidence": "HS-A1.BA1-VER-0006: minimum state of charge 31% over 90 days.",
+  "complianceEvidence": "HS-AN-0006 v2.0: minimum state of charge 31% over 90 days.",
   "verification": "analysis",
   "traces": [
-    "HS-A1-USR-0005"
+    "HS-USR-0005"
   ],
   "checks": [
     {

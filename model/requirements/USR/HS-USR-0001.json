@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1-USR-0001",
+  "id": "HS-USR-0001",
+  "system": "HS-PBS-0001",
   "object": "requirement",
   "type": "functional",
   "title": "View live readings",
@@ -8,6 +9,6 @@
   "stability": "stable",
   "status": "approved",
   "traces": [
-    "HS-A1-STK-0001"
+    "HS-STK-0001"
   ]
 }

@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1-REQ-0001",
+  "id": "HS-REQ-0001",
+  "system": "HS-PBS-0002",
   "object": "requirement",
   "type": "performance",
   "title": "Sampling rate",
@@ -9,11 +10,11 @@
   "stability": "stable",
   "status": "approved",
   "compliance": "compliant",
-  "complianceEvidence": "HS-A1.BA1-VER-0001: longest observed interval 9 min 58 s.",
+  "complianceEvidence": "HS-TR-0001 v1.0: longest observed interval 9 min 58 s.",
   "verification": "test",
   "traces": [
-    "HS-A1-USR-0001",
-    "HS-A1-USR-0002"
+    "HS-USR-0001",
+    "HS-USR-0002"
   ],
   "checks": [
     {

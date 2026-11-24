@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1-USR-0004",
+  "id": "HS-USR-0004",
+  "system": "HS-PBS-0001",
   "object": "requirement",
   "type": "functional",
   "title": "Configure alert thresholds",
@@ -9,6 +10,6 @@
   "stability": "stable",
   "status": "approved",
   "traces": [
-    "HS-A1-STK-0002"
+    "HS-STK-0002"
   ]
 }

@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.KA1-REQ-0003",
+  "id": "HS-REQ-0003",
+  "system": "HS-PBS-0008",
   "object": "requirement",
   "type": "functional",
   "title": "Data retention",
@@ -11,6 +12,6 @@
   "status": "approved",
   "verification": "inspection",
   "traces": [
-    "HS-A1-USR-0002"
+    "HS-USR-0002"
   ]
 }

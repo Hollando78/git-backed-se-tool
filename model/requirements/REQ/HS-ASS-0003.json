@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1-ASS-0003",
+  "id": "HS-ASS-0003",
+  "system": "HS-PBS-0001",
   "object": "assumption",
   "title": "Fleet size",
   "text": "The fleet will not exceed 40 buoys during the life of the system.",

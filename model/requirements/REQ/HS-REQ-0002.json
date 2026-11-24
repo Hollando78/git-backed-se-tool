@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1-REQ-0002",
+  "id": "HS-REQ-0002",
+  "system": "HS-PBS-0001",
   "object": "requirement",
   "type": "performance",
   "title": "Reading latency",
@@ -8,9 +9,9 @@
   "stability": "stable",
   "status": "approved",
   "compliance": "compliant",
-  "complianceEvidence": "HS-A1-VER-0002: 95th percentile latency 41 s.",
+  "complianceEvidence": "HS-TR-0002 v1.1: 95th percentile latency 41 s.",
   "verification": "test",
   "traces": [
-    "HS-A1-USR-0001"
+    "HS-USR-0001"
   ]
 }

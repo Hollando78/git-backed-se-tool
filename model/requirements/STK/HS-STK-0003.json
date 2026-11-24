@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1-STK-0003",
+  "id": "HS-STK-0003",
+  "system": "HS-PBS-0001",
   "object": "requirement",
   "type": "implementation",
   "title": "Low operating burden",

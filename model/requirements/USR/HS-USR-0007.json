@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1-USR-0007",
+  "id": "HS-USR-0007",
+  "system": "HS-PBS-0001",
   "object": "requirement",
   "type": "system",
   "title": "Visible to vessels",
@@ -8,6 +9,6 @@
   "stability": "stable",
   "status": "approved",
   "traces": [
-    "HS-A1-STK-0004"
+    "HS-STK-0004"
   ]
 }

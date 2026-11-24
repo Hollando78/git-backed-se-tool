@@ -1,5 +1,6 @@
 {
-  "id": "HS-A1.BA1.EAA1-REQ-0008",
+  "id": "HS-REQ-0008",
+  "system": "HS-PBS-0007",
   "object": "requirement",
   "type": "system",
   "title": "Navigation light",
@@ -9,9 +10,9 @@
   "stability": "stable",
   "status": "approved",
   "compliance": "compliance risk",
-  "complianceRationale": "Light is specified to IALA characteristics; the range measurement is outstanding (HS-A1.BA1.EAA1-VER-0008 blocked).",
+  "complianceRationale": "Light is specified to IALA characteristics; the range measurement is outstanding (HS-VER-0008 blocked).",
   "verification": "inspection",
   "traces": [
-    "HS-A1-USR-0007"
+    "HS-USR-0007"
   ]
 }
